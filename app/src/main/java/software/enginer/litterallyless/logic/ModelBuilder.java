@@ -20,6 +20,7 @@ public class ModelBuilder {
 
 
     private final Context context;
+    private final String assetPath;
     private BaseOptions.Builder baseBuilder = BaseOptions.builder();
     private int maxResults = defMaxResults;
     private float detectionThreshold = defDetectionThreshold;
@@ -29,9 +30,11 @@ public class ModelBuilder {
 
     public ModelBuilder(Context context, String assetPath) {
         this.context = context;
+        this.assetPath = assetPath;
     }
 
     public ObjectDetector.ObjectDetectorOptions build(){
+        baseBuilder.setModelAssetPath(assetPath).setDelegate(renderMode);
         return ObjectDetector.ObjectDetectorOptions.builder()
                 .setBaseOptions(baseBuilder.build())
                 .setScoreThreshold(detectionThreshold)

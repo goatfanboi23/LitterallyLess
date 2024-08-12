@@ -1,6 +1,7 @@
 package software.enginer.litterallyless.util.perms;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 
 import androidx.activity.ComponentActivity;
@@ -35,8 +36,12 @@ public abstract class SinglePermissionRequester implements PermissionRequester {
     public void request() {
         requestPermissionLauncher.launch(perm);
     }
-    public boolean hasPerm(){
+    public static boolean hasPerm(Context context, String perm){
         return ActivityCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public boolean hasPerm(){
+        return hasPerm(context, perm);
     }
 
     public Activity getContext() {

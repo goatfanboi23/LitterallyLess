@@ -3,6 +3,7 @@ package software.enginer.litterallyless.ui.main;
 import static android.content.ContentValues.TAG;
 import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888;
 
+import android.Manifest;
 import android.content.res.Configuration;
 import android.os.Bundle;
 
@@ -24,6 +25,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mediapipe.framework.image.MPImage;
+import com.google.mediapipe.tasks.core.OutputHandler;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.util.concurrent.ExecutionException;
@@ -37,6 +40,7 @@ import software.enginer.litterallyless.logic.DetectionListener;
 import software.enginer.litterallyless.logic.DetectionResult;
 import software.enginer.litterallyless.logic.Detector;
 import software.enginer.litterallyless.logic.ModelBuilder;
+import software.enginer.litterallyless.util.perms.LoggablePermissionRequester;
 
 public class CameraFeedFragment extends Fragment implements DetectionListener {
 
@@ -71,10 +75,13 @@ public class CameraFeedFragment extends Fragment implements DetectionListener {
         backgroundExecutor = Executors.newSingleThreadExecutor();
 
         backgroundExecutor.execute(() -> {
-            detector = new Detector(new ModelBuilder(CameraFeedFragment.this.getContext(),"model.tflite"));
+            ModelBuilder modelBuilder = new ModelBuilder(CameraFeedFragment.this.getContext(), "model.tflite");
+            modelBuilder.setResultCallback((result, input) -> detector.returnLivestreamResult(result, input));
+            detector = new Detector(modelBuilder);
+            detector.setSubscriber(this);
+            fragmentCameraFeedBinding.viewFinder.post(this::setupCamera);
         });
 
-        fragmentCameraFeedBinding.viewFinder.post(this::setupCamera);
     }
 
     private void setupCamera() {
@@ -157,5 +164,15 @@ public class CameraFeedFragment extends Fragment implements DetectionListener {
                 fragmentCameraFeedBinding.overlay.invalidate();
             });
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        backgroundExecutor.execute(() -> {
+            if (!detector.ready()){
+                detector.setupObjectDetector();
+            }
+        });
     }
 }

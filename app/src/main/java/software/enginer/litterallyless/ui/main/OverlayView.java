@@ -40,28 +40,35 @@ public class OverlayView extends View {
                     detectionResult.getInputImageWidth(),
                     detectionResult.getInputImageHeight(),
                     detectionResult.getInputImageRotation());
-            Matrix matrix = getMatrix(rect);
-            matrix.mapRect(rect.getBounds());
-            int top = getTop() * rect.getScaleFactor();
-            int bottom = getBottom() * rect.getScaleFactor();
-            int left = getLeft() * rect.getScaleFactor();
-            int right = getRight() * rect.getScaleFactor();
+            Matrix matrix = new Matrix();
+            matrix.postTranslate(-rect.getDisplayWidth()/2f, -rect.getDisplayHeight()/2f);
+            matrix.postRotate(rect.getDisplayRotation());
+            if (rect.getDisplayRotation() == 90 || rect.getDisplayRotation() == 270) {
+                matrix.postTranslate(rect.getDisplayHeight() / 2f, rect.getDisplayWidth() / 2f);
+            } else {
+                matrix.postTranslate(rect.getDisplayWidth() / 2f, rect.getDisplayHeight() / 2f);
+            }
+            RectF bounds = rect.getBounds();
+            matrix.mapRect(bounds);
+            float top = bounds.top * rect.getScaleFactor();
+            float bottom = bounds.bottom * rect.getScaleFactor();
+            float left = bounds.left * rect.getScaleFactor();
+            float right = bounds.right * rect.getScaleFactor();
             RectF drawableRect = new RectF(left, top, right, bottom);
 
             canvas.drawRect(drawableRect, rect.getOutlinePaint());
 
             Category category = result.categories().get(0);
             String drawableText = category.categoryName() + " " + df.format(category.score());
-            RectF b = rect.getBounds();
             rect.getTextBackgroundPaint().getTextBounds(
                     drawableText,
                     0,
                     drawableText.length(),
-                    new Rect((int) (b.left+0.5),(int) (b.top+0.5),(int) (b.right + 0.5),(int) (b.bottom + 0.5))
+                    new Rect((int) (bounds.left),(int) (bounds.top),(int) (bounds.right),(int) (bounds.bottom))
             );
 
-            float textWidth = rect.getBounds().width();
-            float textHeight = rect.getBounds().height();
+            float textWidth = bounds.width();
+            float textHeight = bounds.height();
             canvas.drawRect(
                     left,
                     top,
@@ -73,25 +80,12 @@ public class OverlayView extends View {
             canvas.drawText(
                     drawableText,
                     left,
-                    top + rect.getBounds().height(),
+                    top + bounds.height(),
                     rect.getTextPaint()
             );
 
         });
     }
-
-    private static @NonNull Matrix getMatrix(DetectionRect rect) {
-        Matrix matrix = new Matrix();
-        matrix.postTranslate(-rect.getDisplayWidth()/2f, -rect.getDisplayHeight()/2f);
-        matrix.postRotate(rect.getDisplayRotation());
-        if (rect.getDisplayRotation() == 90 || rect.getDisplayRotation() == 270) {
-            matrix.postTranslate(rect.getDisplayHeight() / 2f, rect.getDisplayWidth() / 2f);
-        } else {
-            matrix.postTranslate(rect.getDisplayWidth() / 2f, rect.getDisplayHeight() / 2f);
-        }
-        return matrix;
-    }
-
     public void setDetectionResult(DetectionResult detectionResult){
         this.detectionResult = detectionResult;
         invalidate();
@@ -99,18 +93,15 @@ public class OverlayView extends View {
 
     }
     private DetectionRect rectFromDetection(Detection detection, int imageWidth, int imageHeight, int rotation){
-        RectF rect = detection.boundingBox();
         int outputWidth = imageWidth;
         int outputHeight = imageHeight;
-        switch (rotation){
-            case 90:
-            case 270:
-                outputWidth = imageHeight;
-                outputHeight = imageWidth;
+        if (rotation == 90 || rotation == 270){
+            outputWidth = imageHeight;
+            outputHeight = imageWidth;
         }
         int scaleFactor = Math.max(getWidth() / outputWidth, getHeight() / outputHeight);
         return new DetectionRect(
-                rect,
+                detection.boundingBox(),
                 outputWidth,
                 outputHeight,
                 rotation,

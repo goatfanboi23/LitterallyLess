@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 public class Detector {
     private final ModelBuilder builder;
-    private final AtomicReference<Consumer<DetectionResult>> subscriber = new AtomicReference<>((v)->{});
+    private DetectionListener subscriber = (r)->{};
     private ObjectDetector detector;
     private int imageRotation = 0;
     ImageProcessingOptions imageProcessingOptions;
@@ -58,6 +58,7 @@ public class Detector {
             imageRotation = imageProxy.getImageInfo().getRotationDegrees();
             resetObjectDetector();
             setupObjectDetector();
+            return;
         }
 
         // Convert the input Bitmap object to an MPImage object to run inference
@@ -74,13 +75,17 @@ public class Detector {
     }
 
     // Return the detection result to this ObjectDetectorHelper's caller
-    private void returnLivestreamResult(ObjectDetectorResult result, MPImage inputImage) {
+    public void returnLivestreamResult(ObjectDetectorResult result, MPImage inputImage) {
         long finishTimeMs = SystemClock.uptimeMillis();
         long inferenceTime = finishTimeMs - result.timestampMs();
         DetectionResult dr = new DetectionResult(List.of(result), inferenceTime, inputImage.getWidth(), inputImage.getHeight(), imageRotation);
-        subscriber.get().accept(dr);
+        subscriber.onResult(dr);
     }
-    public void setSubscriber(Consumer<DetectionResult> subscriber){
-        this.subscriber.set(subscriber);
+    public void setSubscriber(DetectionListener subscriber){
+        this.subscriber = subscriber;
+    }
+
+    public boolean ready() {
+        return detector != null;
     }
 }
