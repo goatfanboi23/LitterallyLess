@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:dist="http://schemas.android.com/apk/distribution"
         xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Enable instant app support -->
+    <dist:module dist:instant="true" />
     <!-- Declare features -->
     <uses-feature android:name="android.hardware.camera" />
 
@@ -18,12 +21,18 @@
             android:theme="@style/Theme.LitterallyLess"
             tools:targetApi="35">
             <activity
-                    android:name=".MainActivity"
-                    android:exported="true">
+                    android:name=".ui.MainActivity"
+                    android:exported="true"
+                    android:clearTaskOnLaunch="true"
+                    android:resizeableActivity="true"
+                     android:rotationAnimation="seamless">
                 <intent-filter>
                     <action android:name="android.intent.action.MAIN" />
                     <category android:name="android.intent.category.LAUNCHER" />
                 </intent-filter>
+                <meta-data
+                        android:name="android.notch_support"
+                        android:value="true" />
             </activity>
     </application>
 

@@ -1,17 +1,12 @@
-package software.enginer.litterallyless.ui.main;
+package software.enginer.litterallyless.ui.state;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.util.AttributeSet;
-
-import androidx.core.content.ContextCompat;
 
 public class DetectionRect extends RenderableRect {
 
-    public DetectionRect(RectF bounds, int displayWidth, int displayHeight, int displayRotation, int scaleFactor) {
+    public DetectionRect(RectF bounds, int displayWidth, int displayHeight, int displayRotation, float scaleFactor) {
         super(bounds, displayWidth, displayHeight, displayRotation, scaleFactor);
         initPaints();
     }
