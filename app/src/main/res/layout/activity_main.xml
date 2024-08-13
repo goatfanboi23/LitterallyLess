@@ -27,13 +27,28 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <com.google.android.material.button.MaterialButton
-            android:layout_gravity="center_horizontal"
-            android:text="Button"
-            android:layout_width="wrap_content"
+    <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button"
-            android:layout_marginTop="20dp"/>
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
+        <com.google.android.material.button.MaterialButton
+                android:layout_gravity="center_horizontal"
+                android:text="Launch Camera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/camera_button"
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="20dp"/>
+        <com.google.android.material.button.MaterialButton
+                android:layout_gravity="center_horizontal"
+                android:text="Launch Map"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/map_button"
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="20dp"/>
+    </LinearLayout>
 
     <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragment_container"
