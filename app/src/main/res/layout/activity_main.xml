@@ -1,9 +1,39 @@
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/transparent">
+        android:background="@android:color/transparent"
+        android:id="@+id/layout"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical">
+
+
+
+    <com.google.android.material.appbar.AppBarLayout
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/appBarLayout">
+
+
+        <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/topAppBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="?attr/actionBarSize"
+                app:title="LitterllyLess"
+                app:titleCentered="true" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.button.MaterialButton
+            android:layout_gravity="center_horizontal"
+            android:text="Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/button"
+            android:layout_marginTop="20dp"/>
 
     <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragment_container"
@@ -12,4 +42,5 @@
             android:background="@android:color/transparent"
             android:keepScreenOn="true"
             tools:context=".ui.MainActivity" />
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</LinearLayout>

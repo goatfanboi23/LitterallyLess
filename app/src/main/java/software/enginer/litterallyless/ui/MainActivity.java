@@ -7,6 +7,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import android.Manifest;
 import android.os.Bundle;
+import android.view.View;
 
 import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.databinding.ActivityMainBinding;
@@ -23,10 +24,11 @@ public class MainActivity extends AppCompatActivity {
         activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(activityMainBinding.getRoot());
         // make fullscreen
-        WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        windowInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-        this.getSupportActionBar().hide();
+
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+
         camPermRequest = new LoggablePermissionRequester(MainActivity.this, "USED FOR AI TRASH DETECTION", Manifest.permission.CAMERA){
             @Override
             public void onSuccess() {
@@ -40,13 +42,11 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         };
+        activityMainBinding.button.setOnClickListener(view -> camPermRequest.request());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (!camPermRequest.hasPerm()){
-            camPermRequest.request();
-        }
     }
 }
