@@ -7,15 +7,16 @@ import android.content.pm.PackageManager;
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 
 public abstract class SinglePermissionRequester implements PermissionRequester {
-    private final Activity context;
+    private final AppCompatActivity context;
     private final String perm;
     private final ActivityResultLauncher<String> requestPermissionLauncher;
 
-    public SinglePermissionRequester(ComponentActivity context, String perm) {
+    public SinglePermissionRequester(AppCompatActivity context, String perm) {
         this.context = context;
         this.perm = perm;
         requestPermissionLauncher = context.registerForActivityResult(new ActivityResultContracts.RequestPermission(), r -> {
@@ -44,7 +45,7 @@ public abstract class SinglePermissionRequester implements PermissionRequester {
         return hasPerm(context, perm);
     }
 
-    public Activity getContext() {
+    public AppCompatActivity getContext() {
         return context;
     }
 

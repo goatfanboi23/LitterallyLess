@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import software.enginer.litterallyless.util.Arrays;
@@ -13,13 +14,13 @@ import software.enginer.litterallyless.util.FilterResult;
 
 public abstract class BiPermissionRequester implements PermissionRequester {
 
-    private final Activity context;
+    private final AppCompatActivity context;
     private final ActivityResultLauncher<String[]> requestPermissionLauncher;
     private String[] acceptedPerms = new String[0];
     private String[] rejectedPerms = new String[0];
     private final String[] perms;
 
-    public BiPermissionRequester(ComponentActivity context, boolean requireAll, String... permissions) {
+    public BiPermissionRequester(AppCompatActivity context, boolean requireAll, String... permissions) {
         this.context = context;
         this.perms = permissions;
         requestPermissionLauncher = context.registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), r -> {
@@ -58,7 +59,7 @@ public abstract class BiPermissionRequester implements PermissionRequester {
         requestPermissionLauncher.launch(getPerms());
     }
 
-    public Activity getContext() {
+    public AppCompatActivity getContext() {
         return context;
     }
 }

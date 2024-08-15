@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+            android:id="@+id/map_menu_item"
+            android:enabled="true"
+            android:icon="@drawable/map_24px"
+            android:title="Map"/>
+    <item
+            android:id="@+id/home_menu_item"
+            android:enabled="true"
+            android:icon="@drawable/home_24px"
+            android:title="Home"
+            />
+    <item
+            android:id="@+id/camera_menu_item"
+            android:enabled="true"
+            android:icon="@drawable/photo_camera_24px"
+            android:title="Camera"/>
+</menu>
