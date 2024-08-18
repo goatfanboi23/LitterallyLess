@@ -2,16 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
 }
 android.buildFeatures.buildConfig true
+android.buildFeatures.aidl true
 android {
     namespace 'software.enginer.litterallyless'
     compileSdk 35
-    //2 files found for path lib/arm64-v8a/libc++_shared.so. This version of the Android Gradle Plugin chooses the f
-    packagingOptions {
-        pickFirst 'lib/x86/libc++_shared.so'
-        pickFirst 'lib/x86_64/libc++_shared.so'
-        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
-        pickFirst 'lib/arm64-v8a/libc++_shared.so'
-    }
     defaultConfig {
         applicationId "software.enginer.litterallyless"
         minSdk 24
@@ -59,7 +53,7 @@ android {
 }
 
 dependencies {
-
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout
@@ -91,9 +85,5 @@ dependencies {
     //  mapbox
     implementation 'com.mapbox.maps:android:11.5.1'
 
-//    opencv
-
-    implementation 'org.opencv:opencv:4.10.0'
-
-
+    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
 }

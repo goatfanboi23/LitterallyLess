@@ -23,6 +23,7 @@ import com.google.android.material.shape.MaterialShapeDrawable;
 import com.mapbox.common.MapboxOptions;
 
 import org.opencv.android.OpenCVLoader;
+import org.opencv.tracking.TrackerKCF;
 
 import software.enginer.litterallyless.BuildConfig;
 import software.enginer.litterallyless.MapFragment;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         MapboxOptions.setAccessToken(BuildConfig.MapboxAccessToken);
 
         // initalize opencv
-        if (OpenCVLoader.initLocal()) {
+        if (OpenCVLoader.initDebug()) {
             Log.i(MainActivity.class.getSimpleName(), "OpenCV loaded successfully");
         } else {
             Log.e(MainActivity.class.getSimpleName(), "OpenCV initialization failed!");
