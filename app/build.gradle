@@ -5,7 +5,13 @@ android.buildFeatures.buildConfig true
 android {
     namespace 'software.enginer.litterallyless'
     compileSdk 35
-
+    //2 files found for path lib/arm64-v8a/libc++_shared.so. This version of the Android Gradle Plugin chooses the f
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
     defaultConfig {
         applicationId "software.enginer.litterallyless"
         minSdk 24
@@ -14,6 +20,11 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
     }
     dataBinding {
         enabled = true
@@ -68,6 +79,7 @@ dependencies {
     // CameraX View class
     implementation libs.camera.view
     implementation libs.androidx.fragment
+    implementation libs.play.services.location
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
@@ -78,6 +90,10 @@ dependencies {
 
     //  mapbox
     implementation 'com.mapbox.maps:android:11.5.1'
+
+//    opencv
+
+    implementation 'org.opencv:opencv:4.10.0'
 
 
 }

@@ -16,16 +16,21 @@ import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class DetectorRepository{
     private static final String assetPath = "model.tflite";
 
     private final TrashModel trashModel;
-
     private ImageProcessingOptions imageProcessingOptions;
     private final DetectionListener resultListener;
-    private int detectionViewWidth = 0;
-    private int detectionViewHeight = 0;
+    private final AtomicInteger detectionViewWidth = new AtomicInteger(0);
+    private final AtomicInteger detectionViewHeight = new AtomicInteger(0);
+
+    private final ReentrantReadWriteLock imageProcessingLock = new ReentrantReadWriteLock();
+
 
     public DetectorRepository(Context context, DetectionListener listener){
         this.resultListener = listener;
@@ -55,41 +60,49 @@ public class DetectorRepository{
         imageProxy.close();
 
         // If the input image rotation is change, stop all detector
-        if (imageProxy.getImageInfo().getRotationDegrees() != imageProcessingOptions.rotationDegrees()) {
+        if (imageProxy.getImageInfo().getRotationDegrees() != getImageRotation()) {
             updateRotation(imageProxy.getImageInfo().getRotationDegrees());
             return;
         }
 
         // Convert the input Bitmap object to an MPImage object to run inference
         MPImage mpImage = new BitmapImageBuilder(bitmapBuffer).build();
+        imageProcessingLock.readLock().lock();
         trashModel.getDetector().detectAsync(mpImage, imageProcessingOptions, frameTime);
+        imageProcessingLock.readLock().unlock();
+
     }
 
     public void returnResult(ObjectDetectorResult result, MPImage input) {
         long finishTimeMs = SystemClock.uptimeMillis();
         long inferenceTime = finishTimeMs - result.timestampMs();
-        DetectionResult dr = new DetectionResult(List.of(result), inferenceTime, input.getWidth(), input.getHeight(), imageProcessingOptions.rotationDegrees());
+        DetectionResult dr = new DetectionResult(List.of(result), inferenceTime, input.getWidth(), input.getHeight(), getImageRotation());
         resultListener.onResult(dr);
     }
 
     public void updateRotation(int rotation){
+        imageProcessingLock.writeLock().lock();
         this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
+        imageProcessingLock.writeLock().unlock();
     }
 
     public void updateDetectionDim(int width, int height) {
-        this.detectionViewWidth = width;
-        this.detectionViewHeight = height;
+        this.detectionViewWidth.set(width);
+        this.detectionViewHeight.set(height);
     }
 
     public int getDetectionViewWidth() {
-        return detectionViewWidth;
+        return detectionViewWidth.get();
     }
 
     public int getDetectionViewHeight() {
-        return detectionViewHeight;
+        return detectionViewHeight.get();
     }
 
     public int getImageRotation() {
-        return imageProcessingOptions.rotationDegrees();
+        imageProcessingLock.readLock().lock();
+        int deg = imageProcessingOptions.rotationDegrees();
+        imageProcessingLock.readLock().unlock();
+        return deg;
     }
 }

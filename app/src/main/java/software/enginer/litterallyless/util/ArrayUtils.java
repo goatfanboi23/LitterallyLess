@@ -3,7 +3,7 @@ package software.enginer.litterallyless.util;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
-public class Arrays {
+public class ArrayUtils {
     public static <T> boolean allValid(T[] array, Predicate<T> predicate) {
         boolean matched = true;
         for (T t : array) {

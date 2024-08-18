@@ -2,32 +2,45 @@ package software.enginer.litterallyless.util.perms;
 
 import android.util.Log;
 
-import androidx.activity.ComponentActivity;
+import androidx.activity.result.contract.ActivityResultContract;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-public abstract class LoggablePermissionRequester extends SinglePermissionRequester {
-    private final String rational;
+public abstract class LoggablePermissionRequester<T> extends ContractedPermissionRequester<T> {
+    private final String[] rationals;
     private final String logName;
 
-    public LoggablePermissionRequester(AppCompatActivity context, String rational, String permission) {
-        super(context, permission);
-        this.rational = rational;
+    public LoggablePermissionRequester(AppCompatActivity context, T permHolder, ActivityResultContract<T, ?> contract, boolean requireAll, String[] rationals) {
+        super(context, permHolder, contract, requireAll);
+        this.rationals = rationals;
         this.logName = context.getClass().getSimpleName();
     }
+
     @Override
     public void showRational() {
-        Log.i(logName, getPerm() + " Permission Rational: " + rational);
+        List<String> strings = permAsString(getPermHolder());
+        for (int i = 0; i < strings.size(); i++) {
+            Log.i(logName, strings.get(i) + " Permission Rational: " + rationals[i]);
+        }
     }
 
     @Override
     public void onSuccess() {
-        Log.i(logName, getPerm() + " Permission Accepted");
+        List<String> strings = permAsString(getPermHolder());
+        for (String s: strings){
+            Log.i(logName, s + " Permission Accepted");
+
+        }
     }
 
     @Override
     public void onFail() {
-        Log.i(logName,getPerm()+ " Permission Rejected");
+        List<String> strings = permAsString(getPermHolder());
+        for (String s: strings){
+            Log.i(logName, s + " Permission Rejected");
+
+        }
     }
 }

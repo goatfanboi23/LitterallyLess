@@ -13,12 +13,16 @@ import androidx.fragment.app.Fragment;
 
 import android.Manifest;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.shape.MaterialShapeDrawable;
 import com.mapbox.common.MapboxOptions;
+
+import org.opencv.android.OpenCVLoader;
 
 import software.enginer.litterallyless.BuildConfig;
 import software.enginer.litterallyless.MapFragment;
@@ -48,9 +52,19 @@ public class MainActivity extends AppCompatActivity {
         // initialize mapbox
         MapboxOptions.setAccessToken(BuildConfig.MapboxAccessToken);
 
+        // initalize opencv
+        if (OpenCVLoader.initLocal()) {
+            Log.i(MainActivity.class.getSimpleName(), "OpenCV loaded successfully");
+        } else {
+            Log.e(MainActivity.class.getSimpleName(), "OpenCV initialization failed!");
+            (Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG)).show();
+            return;
+        }
+
+
         // create permission request helpers
-        locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment::new);
-        camPermRequest = new CameraPermTransition(this, R.id.fragment_container, DetectionFragment::new);
+        locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
+        camPermRequest = new CameraPermTransition(this, R.id.fragment_container, DetectionFragment.class);
 
         // configure user interactions
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
