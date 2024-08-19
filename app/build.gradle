@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
 }
 android.buildFeatures.buildConfig true
-android.buildFeatures.aidl true
 android {
     namespace 'software.enginer.litterallyless'
     compileSdk 35
@@ -14,11 +13,6 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                arguments "-DANDROID_STL=c++_shared"
-            }
-        }
     }
     dataBinding {
         enabled = true
@@ -85,5 +79,5 @@ dependencies {
     //  mapbox
     implementation 'com.mapbox.maps:android:11.5.1'
 
-    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
+//    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
 }

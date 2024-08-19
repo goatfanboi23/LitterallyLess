@@ -104,7 +104,8 @@ public class DetectionViewModel extends AndroidViewModel {
 
             return builder.build();
         }).collect(Collectors.toList());
-        uiStateBuilder.drawableDetectionList(drawableList);
+        double fps = 1000.0 / result.getInferenceTime();
+        uiStateBuilder.drawableDetectionList(drawableList).inferenceLabel("ML FPS: " + df.format(fps));
 
         uiState.postValue(uiStateBuilder.build());
     }

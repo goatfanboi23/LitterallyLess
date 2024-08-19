@@ -3,27 +3,17 @@ package software.enginer.litterallyless.ui;
 import static androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 
-import android.Manifest;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.material.navigation.NavigationBarView;
-import com.google.android.material.shape.MaterialShapeDrawable;
 import com.mapbox.common.MapboxOptions;
-
-import org.opencv.android.OpenCVLoader;
-import org.opencv.tracking.TrackerKCF;
 
 import software.enginer.litterallyless.BuildConfig;
 import software.enginer.litterallyless.MapFragment;
@@ -31,7 +21,6 @@ import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.databinding.ActivityMainBinding;
 import software.enginer.litterallyless.perms.CameraPermTransition;
 import software.enginer.litterallyless.perms.LocationPermTransition;
-import software.enginer.litterallyless.util.perms.LoggablePermissionRequester;
 import software.enginer.litterallyless.util.perms.PermissionRequester;
 
 public class MainActivity extends AppCompatActivity {
@@ -52,15 +41,6 @@ public class MainActivity extends AppCompatActivity {
 
         // initialize mapbox
         MapboxOptions.setAccessToken(BuildConfig.MapboxAccessToken);
-
-        // initalize opencv
-        if (OpenCVLoader.initDebug()) {
-            Log.i(MainActivity.class.getSimpleName(), "OpenCV loaded successfully");
-        } else {
-            Log.e(MainActivity.class.getSimpleName(), "OpenCV initialization failed!");
-            (Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG)).show();
-            return;
-        }
 
 
         // create permission request helpers

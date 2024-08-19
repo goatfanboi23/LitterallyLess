@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -40,6 +41,7 @@ public class DetectionFragment extends Fragment {
     private ImageAnalysis imageAnalyzer;
     private ExecutorService backgroundExecutor;
     private Camera camera;
+    private TextView inferenceTextView;
 
     public static DetectionFragment newInstance() {
         return new DetectionFragment();
@@ -56,9 +58,11 @@ public class DetectionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         viewModel = new ViewModelProvider(this).get(DetectionViewModel.class);
+        inferenceTextView = binding.inferenceTextView;
         backgroundExecutor = Executors.newSingleThreadExecutor();
         viewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
             binding.overlay.setContent(detectionUIState.getDrawableDetectionList());
+            inferenceTextView.setText(detectionUIState.getInferenceLabel());
         });
 
         backgroundExecutor.execute(() -> {
