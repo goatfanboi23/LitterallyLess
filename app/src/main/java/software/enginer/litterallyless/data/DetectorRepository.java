@@ -43,10 +43,10 @@ public class DetectorRepository{
         baseBuilder.setModelAssetPath(assetPath).setDelegate(Delegate.GPU);
         ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder()
                 .setBaseOptions(baseBuilder.build())
-                .setScoreThreshold(0.3f)
+                .setScoreThreshold(0.5f)
                 .setRunningMode(RunningMode.LIVE_STREAM)
                 .setResultListener(this::returnResult)
-                .setMaxResults(1).build();
+                .setMaxResults(3).build();
         this.imageProcessingOptions = ImageProcessingOptions.builder()
                 .setRotationDegrees(0)
                 .build();
