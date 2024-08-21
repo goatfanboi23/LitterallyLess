@@ -7,6 +7,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
+import androidx.camera.core.resolutionselector.ResolutionFilter;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
@@ -18,6 +19,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +27,8 @@ import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,6 +74,7 @@ public class DetectionFragment extends Fragment {
         });
     }
 
+
     private void setupCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext());
         cameraProviderFuture.addListener(() -> {
@@ -99,6 +104,7 @@ public class DetectionFragment extends Fragment {
 
         imageAnalyzer = new ImageAnalysis.Builder()
                 .setResolutionSelector(new ResolutionSelector.Builder()
+//                        .setResolutionFilter((list, i) -> List.of(new Size(640,480)))
                         .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                         .build()
                 )
@@ -122,9 +128,9 @@ public class DetectionFragment extends Fragment {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        imageAnalyzer.setTargetRotation(binding.viewFinder.getDisplay().getRotation());
         viewModel.updateDetectionViewDim(binding.overlay.getWidth(), binding.overlay.getHeight());
     }
+
 
     @Override
     public void onDestroyView() {

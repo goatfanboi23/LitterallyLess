@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
 }
 android.buildFeatures.buildConfig true
 android {
@@ -8,6 +9,7 @@ android {
     defaultConfig {
         applicationId "software.enginer.litterallyless"
         minSdk 24
+        minSdkVersion 24
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -44,6 +46,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildToolsVersion '35.0.0 rc4'
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
 dependencies {
@@ -68,6 +73,7 @@ dependencies {
     implementation libs.camera.view
     implementation libs.androidx.fragment
     implementation libs.play.services.location
+    implementation libs.androidx.core.ktx
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
@@ -79,5 +85,10 @@ dependencies {
     //  mapbox
     implementation 'com.mapbox.maps:android:11.5.1'
 
-//    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
+    //ar core
+    implementation 'com.google.ar:core:1.45.0'
+
+
+    // opencv with contrib
+    //    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
 }

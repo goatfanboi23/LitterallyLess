@@ -4,6 +4,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
     <TextView
             android:id="@+id/inferenceTextView"
             android:layout_width="match_parent"
@@ -12,8 +13,8 @@
             android:textAlignment="center"
             android:gravity="center"
             android:minHeight="50dp">
-
     </TextView>
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">

@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.ar.core.ArCoreApk;
 import com.mapbox.common.MapboxOptions;
 
 import software.enginer.litterallyless.BuildConfig;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
 
     private PermissionRequester locationPermRequest;
     private CameraPermTransition camPermRequest;
+    private CameraPermTransition arPermRequest;
 
 
     @Override
@@ -42,10 +44,17 @@ public class MainActivity extends AppCompatActivity {
         // initialize mapbox
         MapboxOptions.setAccessToken(BuildConfig.MapboxAccessToken);
 
+        ArCoreApk.getInstance().checkAvailabilityAsync(this, availability -> {
+            if (!availability.isSupported()) {
+                activityMainBinding.navBar.removeView(activityMainBinding.navBar.findViewById(R.id.home_menu_item));
+            }
+        });
+
 
         // create permission request helpers
         locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
         camPermRequest = new CameraPermTransition(this, R.id.fragment_container, DetectionFragment.class);
+        arPermRequest = new CameraPermTransition(this, R.id.fragment_container, ArCore.class);
 
         // configure user interactions
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
@@ -53,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
         activityMainBinding.navBar.setOnItemSelectedListener(menuItem -> {
             if (menuItem.getItemId() == R.id.camera_menu_item) {
                 camPermRequest.request();
+            } else if (menuItem.getItemId() == R.id.ar_menu_item) {
+                arPermRequest.request();
             } else if (menuItem.getItemId() == R.id.map_menu_item) {
                 locationPermRequest.request();
             }else if (menuItem.getItemId() == R.id.home_menu_item){

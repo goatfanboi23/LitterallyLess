@@ -7,6 +7,10 @@
     <dist:module dist:instant="true" />
     <!-- Declare features -->
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
+    <!-- Limits app visibility in the Google Play Store to ARCore supported devices
+     (https://developers.google.com/ar/devices). -->
+    <uses-feature android:name="android.hardware.camera.ar" />
+
 
     <!-- Declare permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -35,6 +39,7 @@
                     <category android:name="android.intent.category.LAUNCHER" />
                 </intent-filter>
             </activity>
+        <meta-data android:name="com.google.ar.core" android:value="required" />
     </application>
 
 </manifest>

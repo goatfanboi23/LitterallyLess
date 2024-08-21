@@ -4,6 +4,7 @@ import android.app.Application;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.media.Image;
 
 import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
@@ -105,7 +106,9 @@ public class DetectionViewModel extends AndroidViewModel {
             return builder.build();
         }).collect(Collectors.toList());
         double fps = 1000.0 / result.getInferenceTime();
-        uiStateBuilder.drawableDetectionList(drawableList).inferenceLabel("ML FPS: " + df.format(fps));
+        detectorRepository.addFpsQueue(fps);
+        double avgFPS = detectorRepository.calcAverageFPS();
+        uiStateBuilder.drawableDetectionList(drawableList).inferenceLabel("AVG FPS (30 FRAMES): " + df.format(avgFPS));
 
         uiState.postValue(uiStateBuilder.build());
     }

@@ -15,4 +15,9 @@
             android:enabled="true"
             android:icon="@drawable/photo_camera_24px"
             android:title="Camera"/>
+    <item
+            android:id="@+id/ar_menu_item"
+            android:enabled="true"
+            android:icon="@drawable/photo_camera_24px"
+            android:title="AR CORE"/>
 </menu>

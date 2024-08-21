@@ -16,6 +16,8 @@ lifecycleViewmodelKtx = "2.8.4"
 tasksVision = "0.10.14"
 legacySupportV4 = "1.0.0"
 playServicesLocation = "21.3.0"
+kotlin = "1.9.25"
+coreKtx = "1.13.1"
 
 [libraries]
 mapbox = { module = "com.mapbox.maps:android", version.ref = "mapbox" }
@@ -36,7 +38,9 @@ lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-view
 tasks-vision = { module = "com.google.mediapipe:tasks-vision", version.ref = "tasksVision" }
 legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.0.10" }
 
