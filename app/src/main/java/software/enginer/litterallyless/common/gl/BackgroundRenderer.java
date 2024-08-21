@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.enginer.litterallyless.common.gl.arcore;
+package software.enginer.litterallyless.common.gl;
 
 import android.media.Image;
 import android.opengl.GLES30;
 import com.google.ar.core.Coordinates2d;
 import com.google.ar.core.Frame;
-import software.enginer.litterallyless.common.gl.Framebuffer;
-import software.enginer.litterallyless.common.gl.Mesh;
-import software.enginer.litterallyless.common.gl.SampleRender;
-import software.enginer.litterallyless.common.gl.Shader;
-import software.enginer.litterallyless.common.gl.Texture;
-import software.enginer.litterallyless.common.gl.VertexBuffer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -76,8 +71,8 @@ public class BackgroundRenderer {
 
   /**
    * Allocates and initializes OpenGL resources needed by the background renderer. Must be called
-   * during a {@link SampleRender.Renderer} callback, typically in {@link
-   * SampleRender.Renderer#onSurfaceCreated()}.
+   * during a {@link Renderer} callback, typically in {@link
+   * Renderer#onSurfaceCreated(SampleRender)}.
    */
   public BackgroundRenderer(SampleRender render) {
     cameraColorTexture =

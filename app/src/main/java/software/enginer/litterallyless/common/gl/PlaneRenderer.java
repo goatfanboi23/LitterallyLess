@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.enginer.litterallyless.common.gl.arcore;
+package software.enginer.litterallyless.common.gl;
 
 import android.opengl.Matrix;
 import com.google.ar.core.Camera;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.TrackingState;
-import software.enginer.litterallyless.common.gl.IndexBuffer;
-import software.enginer.litterallyless.common.gl.Mesh;
-import software.enginer.litterallyless.common.gl.SampleRender;
-import software.enginer.litterallyless.common.gl.Shader;
+
 import software.enginer.litterallyless.common.gl.Shader.BlendFactor;
-import software.enginer.litterallyless.common.gl.Texture;
-import software.enginer.litterallyless.common.gl.VertexBuffer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -104,8 +100,8 @@ public class PlaneRenderer {
 
   /**
    * Allocates and initializes OpenGL resources needed by the plane renderer. Must be called during
-   * a {@link SampleRender.Renderer} callback, typically in {@link
-   * SampleRender.Renderer#onSurfaceCreated}.
+   * a {@link Renderer} callback, typically in {@link
+   * Renderer#onSurfaceCreated(SampleRender)}.
    */
   public PlaneRenderer(SampleRender render) throws IOException {
     Texture texture =

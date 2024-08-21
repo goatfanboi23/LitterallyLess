@@ -24,13 +24,13 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 
+import software.enginer.litterallyless.common.gl.BackgroundRenderer;
+import software.enginer.litterallyless.common.gl.Renderer;
 import software.enginer.litterallyless.common.kt.LabelRender;
 import software.enginer.litterallyless.common.kt.YuvToRgbConverter;
 import software.enginer.litterallyless.common.helpers.DepthSettings;
 import software.enginer.litterallyless.common.helpers.DisplayRotationHelper;
 import software.enginer.litterallyless.common.gl.SampleRender;
-import software.enginer.litterallyless.common.gl.arcore.BackgroundRenderer;
-import software.enginer.litterallyless.common.gl.arcore.PlaneRenderer;
 
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.NotYetAvailableException;
@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
 
-public class ArCore extends Fragment implements SampleRender.Renderer {
+public class ArCore extends Fragment implements Renderer {
 
     private static final String logName = ArCore.class.getSimpleName();
 
@@ -66,7 +66,6 @@ public class ArCore extends Fragment implements SampleRender.Renderer {
     private Session session;
     private DisplayRotationHelper displayRotationHelper;
 
-    private PlaneRenderer planeRenderer;
     private BackgroundRenderer backgroundRenderer;
     private LabelRender labelRenderer;
     private boolean hasSetTextureNames = false;
@@ -104,12 +103,6 @@ public class ArCore extends Fragment implements SampleRender.Renderer {
             binding.inferenceTextView.setText(detectionUIState.getInferenceLabel());
             labeledAnchorList = detectionUIState.getLabeledAnchorList();
         });
-
-        binding.surfaceview.post(() -> {
-            viewModel.updateDetectionViewDim(binding.surfaceview.getWidth(), binding.surfaceview.getHeight());
-        });
-
-
     }
 
     @Override
@@ -179,20 +172,14 @@ public class ArCore extends Fragment implements SampleRender.Renderer {
 
     @Override
     public void onSurfaceCreated(SampleRender render) {
-        try {
-            planeRenderer = new PlaneRenderer(render);
-            backgroundRenderer = new BackgroundRenderer(render);
-            labelRenderer = new LabelRender();
-            labelRenderer.onSurfaceCreated(render);
-        } catch (IOException e) {
-            Log.e(logName, "Failed to read a required asset file", e);
-        }
+        backgroundRenderer = new BackgroundRenderer(render);
+        labelRenderer = new LabelRender();
+        labelRenderer.onSurfaceCreated(render);
     }
 
     @Override
     public void onSurfaceChanged(SampleRender render, int width, int height) {
         displayRotationHelper.onSurfaceChanged(width, height);
-        viewModel.updateDetectionViewDim(width, height);
     }
 
     @Override
@@ -282,12 +269,6 @@ public class ArCore extends Fragment implements SampleRender.Renderer {
                 viewModel.detectLivestreamFrame(finalCameraImage, rot, new YuvToRgbConverter(context));
             });
         }
-
-        planeRenderer.drawPlanes(
-                render,
-                session.getAllTrackables(Plane.class),
-                camera.getDisplayOrientedPose(),
-                projectionMatrix);
 
         for (LabeledAnchor labeledAnchor : labeledAnchorList) {
             if (labeledAnchor.getAnchor().getTrackingState() != TrackingState.TRACKING) {

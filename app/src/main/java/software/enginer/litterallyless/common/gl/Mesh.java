@@ -22,7 +22,7 @@ import java.io.Closeable;
 /**
  * A collection of vertices, faces, and other attributes that define how to render a 3D object.
  *
- * <p>To render the mesh, use {@link SampleRender#draw()}.
+ * <p>To render the mesh, use {@link SampleRender#draw(Mesh, Shader)} or {@link SampleRender#draw(Mesh, Shader, Framebuffer)}.
  */
 public class Mesh implements Closeable {
   private static final String TAG = Mesh.class.getSimpleName();

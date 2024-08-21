@@ -7,19 +7,19 @@ import software.enginer.litterallyless.common.gl.Shader
 import software.enginer.litterallyless.common.gl.VertexBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 
 /**
  * Draws a label. See [draw].
  */
 class LabelRender {
     companion object {
-        private const val TAG = "LabelRender"
-        val COORDS_BUFFER_SIZE = 2 * 4 * 4
+        private const val COORDS_BUFFER_SIZE = 2 * 4 * 4
 
         /**
          * Vertex buffer data for the mesh quad.
          */
-        val NDC_QUAD_COORDS_BUFFER =
+        val NDC_QUAD_COORDS_BUFFER: FloatBuffer =
             ByteBuffer.allocateDirect(COORDS_BUFFER_SIZE).order(
                 ByteOrder.nativeOrder()
             ).asFloatBuffer().apply {
@@ -40,7 +40,7 @@ class LabelRender {
         /**
          * Vertex buffer data for texture coordinates.
          */
-        val SQUARE_TEX_COORDS_BUFFER =
+        val SQUARE_TEX_COORDS_BUFFER: FloatBuffer =
             ByteBuffer.allocateDirect(COORDS_BUFFER_SIZE).order(
                 ByteOrder.nativeOrder()
             ).asFloatBuffer().apply {

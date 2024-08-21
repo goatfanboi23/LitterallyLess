@@ -61,7 +61,7 @@ public class SampleRender {
 
           @Override
           public void onDrawFrame(GL10 gl) {
-            clear(/*framebuffer=*/ null, 0f, 0f, 0f, 1f);
+            clear(null, 0f, 0f, 0f, 1f);
             renderer.onDrawFrame(SampleRender.this);
           }
         });
@@ -101,29 +101,6 @@ public class SampleRender {
     GLError.maybeThrowGLException("Failed to clear framebuffer", "glClear");
   }
 
-  /** Interface to be implemented for rendering callbacks. */
-  public static interface Renderer {
-    /**
-     * Called by {@link SampleRender} when the GL render surface is created.
-     *
-     * <p>See {@link GLSurfaceView.Renderer#onSurfaceCreated}.
-     */
-    public void onSurfaceCreated(SampleRender render);
-
-    /**
-     * Called by {@link SampleRender} when the GL render surface dimensions are changed.
-     *
-     * <p>See {@link GLSurfaceView.Renderer#onSurfaceChanged}.
-     */
-    public void onSurfaceChanged(SampleRender render, int width, int height);
-
-    /**
-     * Called by {@link SampleRender} when a GL frame is to be rendered.
-     *
-     * <p>See {@link GLSurfaceView.Renderer#onDrawFrame}.
-     */
-    public void onDrawFrame(SampleRender render);
-  }
 
   /* package-private */
   AssetManager getAssets() {
