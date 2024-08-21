@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import software.enginer.litterallyless.common.kt.TextTextureCache;
 import software.enginer.litterallyless.common.kt.YuvToRgbConverter;
 import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.data.DetectorRepository;
@@ -66,7 +67,7 @@ public class ArCoreViewModel extends AndroidViewModel {
             frameLock.unlock();
             Category category = rect.categories().get(0);
             String drawableText = category.categoryName() + " " + df.format(category.score());
-            return new LabeledAnchor(anchor, drawableText);
+            return new LabeledAnchor(anchor, drawableText, TextTextureCache.greenTextPaint);
         }).filter(l -> l.getAnchor() != null).collect(Collectors.toList());
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.addFpsQueue(fps);

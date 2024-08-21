@@ -25,9 +25,8 @@ import com.google.ar.core.TrackingState;
 
 import software.enginer.litterallyless.common.gl.BackgroundRenderer;
 import software.enginer.litterallyless.common.gl.Renderer;
-import software.enginer.litterallyless.common.kt.LabelRender;
+import software.enginer.litterallyless.common.kt.MyLabelRender;
 import software.enginer.litterallyless.common.kt.YuvToRgbConverter;
-import software.enginer.litterallyless.common.helpers.DepthSettings;
 import software.enginer.litterallyless.common.helpers.DisplayRotationHelper;
 import software.enginer.litterallyless.common.gl.SampleRender;
 
@@ -63,7 +62,7 @@ public class ArCore extends Fragment implements Renderer {
     private DisplayRotationHelper displayRotationHelper;
 
     private BackgroundRenderer backgroundRenderer;
-    private LabelRender labelRenderer;
+    private MyLabelRender labelRenderer;
     private boolean hasSetTextureNames = false;
 
     private final float[] viewMatrix = new float[16];
@@ -169,9 +168,13 @@ public class ArCore extends Fragment implements Renderer {
 
     @Override
     public void onSurfaceCreated(SampleRender render) {
-        backgroundRenderer = new BackgroundRenderer(render);
-        labelRenderer = new LabelRender();
-        labelRenderer.onSurfaceCreated(render);
+        try {
+            backgroundRenderer = new BackgroundRenderer(render);
+            labelRenderer = new MyLabelRender();
+            labelRenderer.onSurfaceCreated(render);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -256,9 +259,8 @@ public class ArCore extends Fragment implements Renderer {
             labelRenderer.draw(
                     render,
                     viewProjectionMatrix,
-                    labeledAnchor.getAnchor().getPose(),
-                    camera.getPose(),
-                    labeledAnchor.getLabel()
+                    labeledAnchor,
+                    camera.getPose()
             );
         }
         //prevent object detection from performing hit test whe frame is stale.

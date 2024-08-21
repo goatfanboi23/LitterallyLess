@@ -16,6 +16,26 @@ import java.nio.ByteBuffer
  */
 class TextTextureCache {
     companion object {
+        @JvmField
+        var greenTextPaint: Paint = Paint().apply {
+            textSize = 26f
+            setARGB(0xff, 0x35, 0xea, 0x35)
+            style = Paint.Style.FILL
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            strokeWidth = 2f
+        }
+        @JvmField
+        var redTextPaint = Paint().apply {
+            textSize = 26f
+            setARGB(0xff, 0xea, 0x43, 0x35)
+            style = Paint.Style.FILL
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            strokeWidth = 2f
+        }
         private const val TAG = "TextTextureCache"
     }
 
@@ -25,16 +45,16 @@ class TextTextureCache {
      * Get a texture for a given string. If that string hasn't been used yet, create a texture for it
      * and cache the result.
      */
-    fun get(render: SampleRender, string: String): Texture {
+    fun get(render: SampleRender, string: String, textPaint: Paint): Texture {
         return cacheMap.computeIfAbsent(string) {
-            generateTexture(render, string)
+            generateTexture(render, string, textPaint)
         }
     }
 
-    private fun generateTexture(render: SampleRender, string: String): Texture {
+    private fun generateTexture(render: SampleRender, string: String, textPaint: Paint): Texture {
         val texture = Texture(render, Texture.Target.TEXTURE_2D, Texture.WrapMode.CLAMP_TO_EDGE)
 
-        val bitmap = generateBitmapFromString(string)
+        val bitmap = generateBitmapFromString(string, textPaint)
         val buffer = ByteBuffer.allocateDirect(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(buffer)
         buffer.rewind()
@@ -59,22 +79,12 @@ class TextTextureCache {
         return texture
     }
 
-    val textPaint = Paint().apply {
-        textSize = 26f
-        setARGB(0xff, 0xea, 0x43, 0x35)
-        style = Paint.Style.FILL
-        isAntiAlias = true
-        textAlign = Paint.Align.CENTER
-        typeface = Typeface.DEFAULT_BOLD
-        strokeWidth = 2f
-    }
-
-    val strokePaint = Paint(textPaint).apply {
+    val strokePaint = Paint(redTextPaint).apply {
         setARGB(0xff, 0x00, 0x00, 0x00)
         style = Paint.Style.STROKE
     }
 
-    private fun generateBitmapFromString(string: String): Bitmap {
+    private fun generateBitmapFromString(string: String, textPaint: Paint): Bitmap {
         val w = 256
         val h = 256
         return Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
