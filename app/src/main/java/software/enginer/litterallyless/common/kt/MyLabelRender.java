@@ -68,7 +68,7 @@ public class MyLabelRender {
      * Draws a label quad with text [label] at [pose]. The label will rotate to face [cameraPose] around the Y-axis.
      */
     public void draw(SampleRender render, float[] viewProjectionMatrix, LabeledAnchor labeledAnchor, Pose cameraPose){
-        draw(render, viewProjectionMatrix, labeledAnchor.getAnchor().getPose(), cameraPose, labeledAnchor.getLabel(), labeledAnchor.getColor());
+        draw(render, viewProjectionMatrix, labeledAnchor.getAnchorPose(), cameraPose, labeledAnchor.getLabel(), labeledAnchor.getColor());
     }
 
     /**

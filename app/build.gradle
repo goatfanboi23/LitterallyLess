@@ -8,12 +8,11 @@ android {
     compileSdk 35
     defaultConfig {
         applicationId "software.enginer.litterallyless"
-        minSdk 24
-        minSdkVersion 24
+        minSdk 26
+        minSdkVersion 26
         targetSdk 35
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     dataBinding {
@@ -87,7 +86,6 @@ dependencies {
 
     //ar core
     implementation 'com.google.ar:core:1.45.0'
-
 
     // opencv with contrib
     //    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"

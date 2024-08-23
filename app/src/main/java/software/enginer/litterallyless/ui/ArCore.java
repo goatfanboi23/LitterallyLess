@@ -1,6 +1,5 @@
 package software.enginer.litterallyless.ui;
 
-import android.content.Context;
 import android.media.Image;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -26,7 +25,6 @@ import com.google.ar.core.TrackingState;
 import software.enginer.litterallyless.common.gl.BackgroundRenderer;
 import software.enginer.litterallyless.common.gl.Renderer;
 import software.enginer.litterallyless.common.kt.MyLabelRender;
-import software.enginer.litterallyless.common.kt.YuvToRgbConverter;
 import software.enginer.litterallyless.common.helpers.DisplayRotationHelper;
 import software.enginer.litterallyless.common.gl.SampleRender;
 
@@ -182,10 +180,26 @@ public class ArCore extends Fragment implements Renderer {
         displayRotationHelper.onSurfaceChanged(width, height);
     }
 
+    private void processImageAsync(Image image, int rotation) {
+        backgroundExecutor.submit(() -> {
+            try {
+
+            } catch (Exception e) {
+                String msg = e.getMessage();
+                if (msg != null) {
+                    Log.e(logName, msg);
+                }
+            } finally {
+                if (image != null) {
+                    image.close();
+                }
+            }
+        });
+    }
+
     @Override
     public void onDrawFrame(SampleRender render) {
         if (session == null) {
-            viewModel.lockFrame();
             return;
         }
         if (!hasSetTextureNames) {
@@ -200,7 +214,6 @@ public class ArCore extends Fragment implements Renderer {
             viewModel.provideFrame(frame);
         } catch (CameraNotAvailableException e) {
             Log.e(logName, "Camera not available during onDrawFrame", e);
-            viewModel.lockFrame();
             return;
         }
         Camera camera = frame.getCamera();
@@ -209,7 +222,6 @@ public class ArCore extends Fragment implements Renderer {
             backgroundRenderer.setUseOcclusion(render, session.getConfig().getDepthMode() == Config.DepthMode.AUTOMATIC);
         } catch (IOException e) {
             Log.e(logName, "Failed to read a required asset file", e);
-            viewModel.lockFrame();
             return;
         }
 
@@ -219,15 +231,16 @@ public class ArCore extends Fragment implements Renderer {
                 && (session.getConfig().getDepthMode() == Config.DepthMode.AUTOMATIC)) {
             try (Image depthImage = frame.acquireDepthImage16Bits()) {
                 backgroundRenderer.updateCameraDepthTexture(depthImage);
-            } catch (NotYetAvailableException ignored) {}
+            } catch (NotYetAvailableException ignored) {
+            }
         }
-
-        if (frame.getTimestamp() != 0) {
+        long timestamp = frame.getTimestamp();
+        if (timestamp != 0) {
             backgroundRenderer.drawBackground(render);
+            Log.i(logName, "TIMESTAMP: " + timestamp);
         }
 
         if (camera.getTrackingState() == TrackingState.PAUSED) {
-            viewModel.lockFrame();
             return;
         }
 
@@ -244,18 +257,11 @@ public class ArCore extends Fragment implements Renderer {
         }
         if (cameraImage != null) {
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
-
             Image finalCameraImage = cameraImage;
-            Context context = requireContext();
-            backgroundExecutor.execute(()-> {
-                viewModel.detectLivestreamFrame(finalCameraImage, rot, new YuvToRgbConverter(context));
-            });
+            viewModel.detectLivestreamFrame(finalCameraImage, rot);
         }
 
         for (LabeledAnchor labeledAnchor : labeledAnchorList) {
-            if (labeledAnchor.getAnchor().getTrackingState() != TrackingState.TRACKING) {
-                continue;
-            }
             labelRenderer.draw(
                     render,
                     viewProjectionMatrix,
@@ -263,7 +269,6 @@ public class ArCore extends Fragment implements Renderer {
                     camera.getPose()
             );
         }
-        //prevent object detection from performing hit test whe frame is stale.
         viewModel.lockFrame();
     }
 
