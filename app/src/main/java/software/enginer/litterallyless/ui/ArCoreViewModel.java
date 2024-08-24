@@ -29,6 +29,7 @@ import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.ResettableCountdownLatch;
+import software.enginer.litterallyless.util.convertors.YuvConverter;
 import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ArCoreViewModel extends AndroidViewModel {
@@ -99,7 +100,7 @@ public class ArCoreViewModel extends AndroidViewModel {
         return uiState;
     }
 
-    public void detectLivestreamFrame(Image image, int rotation, @Nullable YuvTwoStepConverter converter) {
+    public void detectLivestreamFrame(Image image, int rotation, @Nullable YuvConverter converter) {
        try{
            latch.await();
        }catch (InterruptedException e){

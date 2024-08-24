@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 
 import software.enginer.litterallyless.util.MathUtils;
 
+//average 20 millis
 public class FallbackYuvToRgbConverter implements YuvTwoStepConverter {
     @Override
     public YuvData yuvAsBuffer(Image image) {
@@ -37,6 +38,7 @@ public class FallbackYuvToRgbConverter implements YuvTwoStepConverter {
         int[] argbArray = new int[image.getWidth() * image.getHeight()];
         int r, g, b;
         int yValue, uValue, vValue;
+
 
         for (int y = 0; y < image.getHeight(); ++y) {
             for (int x = 0; x < image.getWidth(); ++x) {

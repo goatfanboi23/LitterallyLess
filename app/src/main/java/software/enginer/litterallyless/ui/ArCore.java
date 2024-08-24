@@ -43,7 +43,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
+import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
+import software.enginer.litterallyless.util.convertors.MultiThreadedYuvConvertor;
 import software.enginer.litterallyless.util.convertors.NativeYuvConverter;
+import software.enginer.litterallyless.util.convertors.YuvConverter;
 import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ArCore extends Fragment implements Renderer {
@@ -72,7 +75,7 @@ public class ArCore extends Fragment implements Renderer {
     private ArCoreViewModel viewModel;
     private ExecutorService backgroundExecutor;
     private SampleRender renderer;
-    private YuvTwoStepConverter converter;
+    private YuvConverter converter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,

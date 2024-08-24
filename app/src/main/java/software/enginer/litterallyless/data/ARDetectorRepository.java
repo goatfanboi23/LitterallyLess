@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import software.enginer.litterallyless.util.CircularBuffer;
 import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
 import software.enginer.litterallyless.util.PoseUtils;
+import software.enginer.litterallyless.util.convertors.YuvConverter;
 import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ARDetectorRepository {
@@ -64,7 +65,7 @@ public class ARDetectorRepository {
     }
 
 
-    public boolean detectLivestreamFrame(Image image, int rotation, @Nullable YuvTwoStepConverter converter) {
+    public boolean detectLivestreamFrame(Image image, int rotation, @Nullable YuvConverter converter) {
         long frameTime = SystemClock.uptimeMillis();
         Bitmap bitmap;
         if (converter == null){
