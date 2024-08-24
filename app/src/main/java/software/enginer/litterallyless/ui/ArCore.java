@@ -37,13 +37,14 @@ import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
+import software.enginer.litterallyless.util.NativeYuvConvertor;
+import software.enginer.litterallyless.util.Yuv2Rgb;
 
 public class ArCore extends Fragment implements Renderer {
 
@@ -69,9 +70,9 @@ public class ArCore extends Fragment implements Renderer {
 
     private FragmentArCoreBinding binding;
     private ArCoreViewModel viewModel;
-    private List<LabeledAnchor> labeledAnchorList = new ArrayList<>();
     private ExecutorService backgroundExecutor;
     private SampleRender renderer;
+    private Yuv2Rgb converter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -91,8 +92,8 @@ public class ArCore extends Fragment implements Renderer {
         installRequested = false;
         viewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
             binding.inferenceTextView.setText(detectionUIState.getInferenceLabel());
-            labeledAnchorList = detectionUIState.getLabeledAnchorList();
         });
+        this.converter = new NativeYuvConvertor();
     }
 
     @Override
@@ -202,6 +203,7 @@ public class ArCore extends Fragment implements Renderer {
         if (session == null) {
             return;
         }
+        viewModel.awaitDetection();
         if (!hasSetTextureNames) {
             session.setCameraTextureNames(new int[]{backgroundRenderer.getCameraColorTexture().getTextureId()});
             hasSetTextureNames = true;
@@ -211,7 +213,7 @@ public class ArCore extends Fragment implements Renderer {
         Frame frame;
         try {
             frame = session.update();
-            viewModel.provideFrame(frame);
+            viewModel.setFrame(frame);
         } catch (CameraNotAvailableException e) {
             Log.e(logName, "Camera not available during onDrawFrame", e);
             return;
@@ -237,7 +239,6 @@ public class ArCore extends Fragment implements Renderer {
         long timestamp = frame.getTimestamp();
         if (timestamp != 0) {
             backgroundRenderer.drawBackground(render);
-            Log.i(logName, "TIMESTAMP: " + timestamp);
         }
 
         if (camera.getTrackingState() == TrackingState.PAUSED) {
@@ -258,10 +259,12 @@ public class ArCore extends Fragment implements Renderer {
         if (cameraImage != null) {
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
             Image finalCameraImage = cameraImage;
-            viewModel.detectLivestreamFrame(finalCameraImage, rot);
+            backgroundExecutor.execute(()-> {
+                viewModel.detectLivestreamFrame(finalCameraImage, rot, converter);
+            });
         }
-
-        for (LabeledAnchor labeledAnchor : labeledAnchorList) {
+        List<LabeledAnchor> anchors = viewModel.getUiState().getValue().getLabeledAnchorList();
+        for (LabeledAnchor labeledAnchor : anchors) {
             labelRenderer.draw(
                     render,
                     viewProjectionMatrix,
@@ -269,7 +272,7 @@ public class ArCore extends Fragment implements Renderer {
                     camera.getPose()
             );
         }
-        viewModel.lockFrame();
+
     }
 
     /**

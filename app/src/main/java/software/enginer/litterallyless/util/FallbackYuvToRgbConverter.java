@@ -6,7 +6,7 @@ import android.media.Image;
 
 import java.nio.ByteBuffer;
 
-public class FallbackYuvToRgbConverter {
+public class FallbackYuvToRgbConverter implements Yuv2Rgb{
     public static Bitmap yuv420ToBitmap(Image image) {
         if (image.getFormat() != ImageFormat.YUV_420_888) {
             throw new IllegalArgumentException("Invalid image format");
@@ -95,5 +95,9 @@ public class FallbackYuvToRgbConverter {
         return Bitmap.createBitmap(argbArray,imageWidth, imageHeight,Bitmap.Config.ARGB_8888);
     }
 
+    @Override
+    public Bitmap yuv2rgb(Image image) {
+        return yuv420ToBitmap(image);
+    }
 }
 

@@ -14,6 +14,7 @@ import android.renderscript.Allocation;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.renderscript.Type;
+import android.util.Log;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Pose;
@@ -31,14 +32,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import software.enginer.litterallyless.util.FallbackYuvToRgbConverter;
 import software.enginer.litterallyless.util.PoseUtils;
+import software.enginer.litterallyless.util.Yuv2Rgb;
 
 public class ARDetectorRepository {
     private static final String assetPath = "model.tflite";
@@ -52,6 +57,7 @@ public class ARDetectorRepository {
     private final ReentrantReadWriteLock imageProcessingLock = new ReentrantReadWriteLock();
     private final List<Pose> anchors = new ArrayList<>();
     private final ReentrantLock anchorLock = new ReentrantLock();
+    private static final FallbackYuvToRgbConverter fallbackConverter = new FallbackYuvToRgbConverter();
 
 
     public ARDetectorRepository(Context context, DetectionListener listener){
@@ -72,16 +78,22 @@ public class ARDetectorRepository {
     }
 
 
-    public void detectLivestreamFrame(Image image, int rotation) {
+    public boolean detectLivestreamFrame(Image image, int rotation, @Nullable Yuv2Rgb converter) {
         long frameTime = SystemClock.uptimeMillis();
-        Bitmap bitmap = FallbackYuvToRgbConverter.yuv420ToBitmap(image);
+        Bitmap bitmap;
+        if (converter == null){
+            bitmap = fallbackConverter.yuv2rgb(image);
+        }else{
+            bitmap = converter.yuv2rgb(image);
+        }
         if (rotation != getImageRotation()) {
             updateRotation(rotation);
             bitmap.recycle();
-            return;
+            return false;
         }
         image.close();
         bitmapDetection(bitmap, frameTime);
+        return true;
     }
 
     private void bitmapDetection(Bitmap bitmapBuffer, long frameTime){
@@ -100,9 +112,18 @@ public class ARDetectorRepository {
     }
 
     public void updateRotation(int rotation){
-        imageProcessingLock.writeLock().lock();
-        this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
-        imageProcessingLock.writeLock().unlock();
+        try {
+            boolean success = imageProcessingLock.writeLock().tryLock(1, TimeUnit.SECONDS);
+            if (!success){
+                throw new IllegalArgumentException("COULD NOT SECURE LOCK");
+            }else{
+                this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            imageProcessingLock.writeLock().unlock();
+        }
     }
 
     public void updateDetectionDim(int width, int height) {

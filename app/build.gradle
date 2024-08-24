@@ -48,6 +48,12 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.30.2"
+        }
+    }
 }
 
 dependencies {

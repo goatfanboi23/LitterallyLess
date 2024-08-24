@@ -5,6 +5,7 @@ import android.media.Image;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -18,6 +19,7 @@ import com.google.mediapipe.tasks.components.containers.Category;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -34,16 +36,20 @@ import software.enginer.litterallyless.data.ARDetectorRepository;
 import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
+import software.enginer.litterallyless.util.ResettableCountdownLatch;
+import software.enginer.litterallyless.util.Yuv2Rgb;
 
 public class ArCoreViewModel extends AndroidViewModel {
     private static final DecimalFormat df = new DecimalFormat("0.00");
     private final MutableLiveData<ArCoreUIState> uiState = new MutableLiveData<>(new ArCoreUIState());
     private final ARDetectorRepository detectorRepository;
     private Frame frame;
-    private final ReentrantLock frameLock = new ReentrantLock();
+    private final ResettableCountdownLatch latch;
 
     public ArCoreViewModel(@NonNull Application application) {
         super(application);
+        latch = new ResettableCountdownLatch(1);
+        latch.countDown();
         detectorRepository = new ARDetectorRepository(application.getApplicationContext(), this::onResult);
     }
     private Anchor createAnchor(float imageX, float imageY, Frame frame) {
@@ -69,23 +75,26 @@ public class ArCoreViewModel extends AndroidViewModel {
 
     private void onResult(DetectionResult result) {
         ObjectDetectorResult objectDetectorResult = result.getResults().get(0);
-        frameLock.lock();
-        List<LabeledAnchor> labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
-            Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
-            if (anchor != null){
-                Pose anchorPose = anchor.getPose();
-                AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
-                detectorRepository.addAnchor(anchorPose);
-                Log.i(ArCoreViewModel.class.getSimpleName(), "PROX: " +  closestAnchor.getProximity());
-                Category category = rect.categories().get(0);
-                String drawableText = category.categoryName() + " " + df.format(category.score());
-                return new LabeledAnchor(anchorPose, drawableText, TextTextureCache.greenTextPaint);
-            }else{
-                return null;
-            }
+        List<LabeledAnchor> labeledAnchorList;
+        try{
+            labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
+                Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
+                if (anchor != null){
+                    Pose anchorPose = anchor.getPose();
+                    AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
+                    detectorRepository.addAnchor(anchorPose);
+                    Log.i(ArCoreViewModel.class.getSimpleName(), "PROX: " +  closestAnchor.getProximity());
+                    Category category = rect.categories().get(0);
+                    String drawableText = category.categoryName() + " " + df.format(category.score());
+                    return new LabeledAnchor(anchorPose, drawableText, TextTextureCache.greenTextPaint);
+                }else{
+                    return null;
+                }
 
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-        frameLock.unlock();
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        }finally {
+            latch.countDown();
+        }
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.addFpsQueue(fps);
         double avgFPS = detectorRepository.calcAverageFPS();
@@ -98,22 +107,29 @@ public class ArCoreViewModel extends AndroidViewModel {
         return uiState;
     }
 
-    public void detectLivestreamFrame(Image image, int rotation) {
-        detectorRepository.detectLivestreamFrame(image, rotation);
+    public void detectLivestreamFrame(Image image, int rotation, @Nullable Yuv2Rgb converter) {
+       try{
+           latch.await();
+       }catch (InterruptedException e){
+           throw new RuntimeException(e);
+       }finally {
+           latch.reset();
+       }
+        boolean success = detectorRepository.detectLivestreamFrame(image, rotation, converter);
+        if (!success){
+            latch.countDown();
+        }
     }
 
-    public void provideFrame(Frame frame) {
-        frameLock.lock();
+    public void setFrame(Frame frame) {
         this.frame = frame;
-        while (frameLock.isHeldByCurrentThread()){
-            frameLock.unlock();
-        }
-        if (frameLock.isLocked()){
-            Log.e(ArCoreViewModel.class.getSimpleName(), "FRAME IS STILL LOCKED!!!");
-        }
-    }
-    public void lockFrame(){
-        frameLock.lock();
     }
 
+    public void awaitDetection() {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
