@@ -19,16 +19,8 @@ import com.google.mediapipe.tasks.components.containers.Category;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Phaser;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import software.enginer.litterallyless.common.kt.TextTextureCache;
@@ -37,7 +29,7 @@ import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.ResettableCountdownLatch;
-import software.enginer.litterallyless.util.Yuv2Rgb;
+import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ArCoreViewModel extends AndroidViewModel {
     private static final DecimalFormat df = new DecimalFormat("0.00");
@@ -96,8 +88,8 @@ public class ArCoreViewModel extends AndroidViewModel {
             latch.countDown();
         }
         double fps = 1000.0 / result.getInferenceTime();
-        detectorRepository.addFpsQueue(fps);
-        double avgFPS = detectorRepository.calcAverageFPS();
+        detectorRepository.getDetectionFpsMonitor().addQueue(fps);
+        double avgFPS = detectorRepository.getDetectionFpsMonitor().averageDouble(Double::doubleValue);
         String inferenceLabel = "AVG FPS (30 FRAMES): " + df.format(avgFPS);
         ArCoreUIState arCoreUIState = new ArCoreUIState(labeledAnchorList, inferenceLabel);
         uiState.postValue(arCoreUIState);
@@ -107,7 +99,7 @@ public class ArCoreViewModel extends AndroidViewModel {
         return uiState;
     }
 
-    public void detectLivestreamFrame(Image image, int rotation, @Nullable Yuv2Rgb converter) {
+    public void detectLivestreamFrame(Image image, int rotation, @Nullable YuvTwoStepConverter converter) {
        try{
            latch.await();
        }catch (InterruptedException e){

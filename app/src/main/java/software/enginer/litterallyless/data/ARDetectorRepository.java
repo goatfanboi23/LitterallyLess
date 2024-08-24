@@ -2,23 +2,11 @@ package software.enginer.litterallyless.data;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.ImageFormat;
-import android.graphics.PixelFormat;
-import android.graphics.RenderNode;
-import android.hardware.HardwareBuffer;
 import android.media.Image;
-import android.media.ImageReader;
-import android.os.Build;
 import android.os.SystemClock;
-import android.renderscript.Allocation;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicYuvToRGB;
-import android.renderscript.Type;
 import android.util.Log;
 
-import com.google.ar.core.Anchor;
 import com.google.ar.core.Pose;
-import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.core.BaseOptions;
@@ -30,20 +18,17 @@ import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import software.enginer.litterallyless.util.FallbackYuvToRgbConverter;
+import software.enginer.litterallyless.util.CircularBuffer;
+import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
 import software.enginer.litterallyless.util.PoseUtils;
-import software.enginer.litterallyless.util.Yuv2Rgb;
+import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ARDetectorRepository {
     private static final String assetPath = "model.tflite";
@@ -53,7 +38,8 @@ public class ARDetectorRepository {
     private final DetectionListener resultListener;
     private final AtomicInteger detectionViewWidth = new AtomicInteger(0);
     private final AtomicInteger detectionViewHeight = new AtomicInteger(0);
-    private final ArrayBlockingQueue<Double> fpsQueue = new ArrayBlockingQueue<>(30);
+    private final CircularBuffer<Double> detectionFpsMonitor = new CircularBuffer<>();
+    private final CircularBuffer<Double> conversionFpsMonitor = new CircularBuffer<>();
     private final ReentrantReadWriteLock imageProcessingLock = new ReentrantReadWriteLock();
     private final List<Pose> anchors = new ArrayList<>();
     private final ReentrantLock anchorLock = new ReentrantLock();
@@ -78,7 +64,7 @@ public class ARDetectorRepository {
     }
 
 
-    public boolean detectLivestreamFrame(Image image, int rotation, @Nullable Yuv2Rgb converter) {
+    public boolean detectLivestreamFrame(Image image, int rotation, @Nullable YuvTwoStepConverter converter) {
         long frameTime = SystemClock.uptimeMillis();
         Bitmap bitmap;
         if (converter == null){
@@ -86,6 +72,10 @@ public class ARDetectorRepository {
         }else{
             bitmap = converter.yuv2rgb(image);
         }
+        long deltaDetectionTime = (SystemClock.uptimeMillis() - frameTime);
+        getDetectionFpsMonitor().addQueue((double) deltaDetectionTime);
+        double avgFPS = getDetectionFpsMonitor().averageDouble(Double::doubleValue);
+        Log.i(ARDetectorRepository.class.getSimpleName(), "CONVERSION TIME: " + avgFPS);
         if (rotation != getImageRotation()) {
             updateRotation(rotation);
             bitmap.recycle();
@@ -146,15 +136,12 @@ public class ARDetectorRepository {
         return deg;
     }
 
-    public void addFpsQueue(Double d) {
-       while(!fpsQueue.offer(d)){
-           fpsQueue.poll();
-       }
+    public CircularBuffer<Double> getDetectionFpsMonitor(){
+        return detectionFpsMonitor;
     }
 
-    public double calcAverageFPS(){
-        OptionalDouble average = fpsQueue.stream().mapToDouble(Double::doubleValue).average();
-        return average.orElse(0);
+    public CircularBuffer<Double> getConversionFpsMonitor() {
+        return conversionFpsMonitor;
     }
 
     public void addAnchor(Pose anchorPose){

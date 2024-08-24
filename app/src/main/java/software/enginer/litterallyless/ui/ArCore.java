@@ -43,8 +43,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
-import software.enginer.litterallyless.util.NativeYuvConvertor;
-import software.enginer.litterallyless.util.Yuv2Rgb;
+import software.enginer.litterallyless.util.convertors.NativeYuvConverter;
+import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 
 public class ArCore extends Fragment implements Renderer {
 
@@ -72,7 +72,7 @@ public class ArCore extends Fragment implements Renderer {
     private ArCoreViewModel viewModel;
     private ExecutorService backgroundExecutor;
     private SampleRender renderer;
-    private Yuv2Rgb converter;
+    private YuvTwoStepConverter converter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -93,7 +93,7 @@ public class ArCore extends Fragment implements Renderer {
         viewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
             binding.inferenceTextView.setText(detectionUIState.getInferenceLabel());
         });
-        this.converter = new NativeYuvConvertor();
+        this.converter = new NativeYuvConverter();
     }
 
     @Override
@@ -203,7 +203,6 @@ public class ArCore extends Fragment implements Renderer {
         if (session == null) {
             return;
         }
-        viewModel.awaitDetection();
         if (!hasSetTextureNames) {
             session.setCameraTextureNames(new int[]{backgroundRenderer.getCameraColorTexture().getTextureId()});
             hasSetTextureNames = true;
@@ -272,7 +271,7 @@ public class ArCore extends Fragment implements Renderer {
                     camera.getPose()
             );
         }
-
+        viewModel.awaitDetection();
     }
 
     /**

@@ -26,7 +26,7 @@ import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicYuvToRGB
 import android.renderscript.Type
-import software.enginer.litterallyless.util.Yuv2Rgb
+import software.enginer.litterallyless.util.convertors.YuvConverter
 
 /**
  * Helper class used to efficiently convert a [Media.Image] object from
@@ -41,7 +41,8 @@ import software.enginer.litterallyless.util.Yuv2Rgb
  * since this is not an efficient camera pipeline due to the multiple copies
  * required to convert each frame.
  */
-class RenderscriptYuv2Rgb(context: Context) : Yuv2Rgb {
+class RenderscriptYuv2Rgb(context: Context) :
+    YuvConverter {
     private val rs = RenderScript.create(context)
     private val scriptYuvToRgb = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs))
 

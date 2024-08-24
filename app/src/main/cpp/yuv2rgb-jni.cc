@@ -7,7 +7,7 @@
 extern "C" {
 
 jboolean
-Java_software_enginer_litterallyless_util_NativeYuvConvertor_yuv420toArgbNative(
+Java_software_enginer_litterallyless_util_convertors_NativeYuvConverter_yuv420toArgbNative(
         JNIEnv* env, jclass clazz, jint width, jint height, jobject y_byte_buffer,
         jobject u_byte_buffer, jobject v_byte_buffer, jint y_pixel_stride,
         jint uv_pixel_stride, jint y_row_stride, jint uv_row_stride,
