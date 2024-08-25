@@ -46,6 +46,7 @@ import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
 import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
 import software.enginer.litterallyless.util.convertors.MultiThreadedYuvConvertor;
 import software.enginer.litterallyless.util.convertors.NativeYuvConverter;
+import software.enginer.litterallyless.util.convertors.RenderscriptYuv2Rgb;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 import software.enginer.litterallyless.util.convertors.YuvTwoStepConverter;
 

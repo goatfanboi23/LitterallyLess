@@ -1,4 +1,4 @@
-package software.enginer.litterallyless.common
+package software.enginer.litterallyless.util.convertors
 
 /*
  * Copyright 2020 The Android Open Source Project
@@ -26,7 +26,6 @@ import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicYuvToRGB
 import android.renderscript.Type
-import software.enginer.litterallyless.util.convertors.YuvConverter
 
 /**
  * Helper class used to efficiently convert a [Media.Image] object from
@@ -81,6 +80,8 @@ class RenderscriptYuv2Rgb(context: Context) :
         scriptYuvToRgb.setInput(inputAllocation)
         scriptYuvToRgb.forEach(outputAllocation)
         outputAllocation.copyTo(output)
+
+        rs.destroy();
     }
 
     private fun imageToByteArray(image: Image, outputBuffer: ByteArray) {

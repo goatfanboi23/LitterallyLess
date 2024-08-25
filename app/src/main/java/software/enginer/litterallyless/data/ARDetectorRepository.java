@@ -80,6 +80,7 @@ public class ARDetectorRepository {
         if (rotation != getImageRotation()) {
             updateRotation(rotation);
             bitmap.recycle();
+            image.close();
             return false;
         }
         image.close();

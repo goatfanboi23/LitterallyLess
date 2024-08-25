@@ -5,8 +5,8 @@ import android.media.Image;
 
 import java.nio.ByteBuffer;
 
-//average 11 millis
-public class NativeYuvConverter implements YuvTwoStepConverter {
+//average 11.8 millis
+public class NativeYuvConverter extends YuvTwoStepConverter {
 
     public NativeYuvConverter() {}
 

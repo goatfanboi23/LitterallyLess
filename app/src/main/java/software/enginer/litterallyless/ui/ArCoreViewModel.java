@@ -19,6 +19,7 @@ import com.google.mediapipe.tasks.components.containers.Category;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -68,23 +69,24 @@ public class ArCoreViewModel extends AndroidViewModel {
 
     private void onResult(DetectionResult result) {
         ObjectDetectorResult objectDetectorResult = result.getResults().get(0);
-        List<LabeledAnchor> labeledAnchorList;
-        try{
+        List<LabeledAnchor> labeledAnchorList = new ArrayList<>();
+        try {
             labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
                 Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
-                if (anchor != null){
+                if (anchor != null) {
                     Pose anchorPose = anchor.getPose();
                     AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
                     detectorRepository.addAnchor(anchorPose);
-                    Log.i(ArCoreViewModel.class.getSimpleName(), "PROX: " +  closestAnchor.getProximity());
+                    Log.i(ArCoreViewModel.class.getSimpleName(), "PROX: " + closestAnchor.getProximity());
                     Category category = rect.categories().get(0);
                     String drawableText = category.categoryName() + " " + df.format(category.score());
                     return new LabeledAnchor(anchorPose, drawableText, TextTextureCache.greenTextPaint);
-                }else{
+                } else {
                     return null;
                 }
-
             }).filter(Objects::nonNull).collect(Collectors.toList());
+        }catch (Exception e) {
+            Log.e(ArCoreViewModel.class.getSimpleName(), "Error creating Anchor", e);
         }finally {
             latch.countDown();
         }

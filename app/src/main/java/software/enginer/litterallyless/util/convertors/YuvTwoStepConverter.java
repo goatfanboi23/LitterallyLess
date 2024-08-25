@@ -3,13 +3,15 @@ package software.enginer.litterallyless.util.convertors;
 import android.graphics.Bitmap;
 import android.media.Image;
 
-public interface YuvTwoStepConverter extends YuvConverter {
+import software.enginer.litterallyless.util.MathUtils;
+
+public abstract class YuvTwoStepConverter implements YuvConverter {
 
     @Override
-    default Bitmap yuv2rgb(Image image){
+    public Bitmap yuv2rgb(Image image){
         return yuvBuffer2Rgb(yuvAsBuffer(image));
     }
 
-    YuvData yuvAsBuffer(Image image);
-    Bitmap yuvBuffer2Rgb(YuvData image);
+    abstract YuvData yuvAsBuffer(Image image);
+    abstract Bitmap yuvBuffer2Rgb(YuvData image);
 }

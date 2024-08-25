@@ -26,6 +26,7 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.LitterallyLess"
             android:fitsSystemWindows="true"
+            android:hardwareAccelerated="true"
             android:name=".LitterallyLess"
             tools:targetApi="35">
             <activity
