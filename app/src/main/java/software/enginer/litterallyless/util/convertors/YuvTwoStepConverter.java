@@ -3,8 +3,6 @@ package software.enginer.litterallyless.util.convertors;
 import android.graphics.Bitmap;
 import android.media.Image;
 
-import software.enginer.litterallyless.util.MathUtils;
-
 public abstract class YuvTwoStepConverter implements YuvConverter {
 
     @Override

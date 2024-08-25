@@ -11,18 +11,18 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.google.ar.core.ArCoreApk;
 import com.mapbox.common.MapboxOptions;
 
 import software.enginer.litterallyless.BuildConfig;
-import software.enginer.litterallyless.MapFragment;
+import software.enginer.litterallyless.ui.fragments.MapFragment;
 import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.databinding.ActivityMainBinding;
 import software.enginer.litterallyless.perms.CameraPermTransition;
 import software.enginer.litterallyless.perms.LocationPermTransition;
+import software.enginer.litterallyless.ui.fragments.ArCoreFragment;
+import software.enginer.litterallyless.ui.fragments.DetectionFragment;
 import software.enginer.litterallyless.util.perms.PermissionRequester;
 
 public class MainActivity extends AppCompatActivity {
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         // create permission request helpers
         locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
         camPermRequest = new CameraPermTransition(this, R.id.fragment_container, DetectionFragment.class);
-        arPermRequest = new CameraPermTransition(this, R.id.fragment_container, ArCore.class);
+        arPermRequest = new CameraPermTransition(this, R.id.fragment_container, ArCoreFragment.class);
 
         // configure user interactions
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);

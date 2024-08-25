@@ -1,6 +1,6 @@
 package software.enginer.litterallyless.util.convertors;
 
-import software.enginer.litterallyless.util.MathUtils;
+import software.enginer.litterallyless.util.utilities.MathUtils;
 
 public class YuvUtils {
 

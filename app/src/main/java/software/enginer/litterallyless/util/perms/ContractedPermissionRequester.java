@@ -1,6 +1,5 @@
 package software.enginer.litterallyless.util.perms;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -12,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import software.enginer.litterallyless.util.FilterResult;
-import software.enginer.litterallyless.util.ListUtils;
+import software.enginer.litterallyless.util.utilities.ListUtils;
 
 
 public abstract class ContractedPermissionRequester<T> implements PermissionRequester {

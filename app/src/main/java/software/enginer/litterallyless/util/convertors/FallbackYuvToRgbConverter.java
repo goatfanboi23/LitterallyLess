@@ -5,8 +5,6 @@ import android.media.Image;
 
 import java.nio.ByteBuffer;
 
-import software.enginer.litterallyless.util.MathUtils;
-
 //average 32.0 millis
 public class FallbackYuvToRgbConverter extends YuvTwoStepConverter {
 

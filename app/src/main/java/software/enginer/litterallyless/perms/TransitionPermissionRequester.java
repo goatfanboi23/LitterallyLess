@@ -1,19 +1,10 @@
 package software.enginer.litterallyless.perms;
 
-import android.Manifest;
-
 import androidx.activity.result.contract.ActivityResultContract;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Supplier;
-
-import software.enginer.litterallyless.MapFragment;
 import software.enginer.litterallyless.util.perms.LoggablePermissionRequester;
 
 public abstract class TransitionPermissionRequester<T> extends LoggablePermissionRequester<T> {

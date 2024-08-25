@@ -24,7 +24,7 @@
                 android:layout_height="match_parent"
                 app:scaleType="fillStart"/>
 
-        <software.enginer.litterallyless.ui.DetectionView
+        <software.enginer.litterallyless.ui.views.DetectionView
                 android:id="@+id/overlay"
                 android:layout_height="match_parent"
                 android:layout_width="match_parent" />
