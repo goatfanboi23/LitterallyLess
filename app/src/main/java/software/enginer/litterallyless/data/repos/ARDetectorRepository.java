@@ -41,8 +41,6 @@ public class ARDetectorRepository {
     private final TrashModel trashModel;
     private ImageProcessingOptions imageProcessingOptions;
     private final DetectionListener resultListener;
-    private final AtomicInteger detectionViewWidth = new AtomicInteger(0);
-    private final AtomicInteger detectionViewHeight = new AtomicInteger(0);
     private final CircularArrayBuffer<Double> detectionFpsMonitor = new CircularArrayBuffer<>();
     private final CircularArrayBuffer<Double> conversionFpsMonitor = new CircularArrayBuffer<>();
     private final ReentrantReadWriteLock imageProcessingLock = new ReentrantReadWriteLock();
@@ -107,31 +105,9 @@ public class ARDetectorRepository {
     }
 
     public void updateRotation(int rotation) {
-        try {
-            boolean success = imageProcessingLock.writeLock().tryLock(1, TimeUnit.SECONDS);
-            if (!success) {
-                throw new IllegalArgumentException("COULD NOT SECURE LOCK");
-            } else {
-                this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            imageProcessingLock.writeLock().unlock();
-        }
-    }
-
-    public void updateDetectionDim(int width, int height) {
-        this.detectionViewWidth.set(width);
-        this.detectionViewHeight.set(height);
-    }
-
-    public int getDetectionViewWidth() {
-        return detectionViewWidth.get();
-    }
-
-    public int getDetectionViewHeight() {
-        return detectionViewHeight.get();
+        imageProcessingLock.writeLock().lock();
+        this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
+        imageProcessingLock.writeLock().unlock();
     }
 
     public int getImageRotation() {
