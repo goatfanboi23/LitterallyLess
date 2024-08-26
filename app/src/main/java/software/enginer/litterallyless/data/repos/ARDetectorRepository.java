@@ -16,11 +16,11 @@ import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 
-import java.util.ArrayList;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.annotation.Nullable;
@@ -28,10 +28,11 @@ import javax.annotation.Nullable;
 import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionListener;
 import software.enginer.litterallyless.data.DetectionResult;
+import software.enginer.litterallyless.data.TrackableAnchorManager;
 import software.enginer.litterallyless.data.TrashModel;
-import software.enginer.litterallyless.util.CircularBuffer;
+import software.enginer.litterallyless.util.CircularArrayBuffer;
+import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
-import software.enginer.litterallyless.util.utilities.PoseUtils;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 
 public class ARDetectorRepository {
@@ -42,15 +43,14 @@ public class ARDetectorRepository {
     private final DetectionListener resultListener;
     private final AtomicInteger detectionViewWidth = new AtomicInteger(0);
     private final AtomicInteger detectionViewHeight = new AtomicInteger(0);
-    private final CircularBuffer<Double> detectionFpsMonitor = new CircularBuffer<>();
-    private final CircularBuffer<Double> conversionFpsMonitor = new CircularBuffer<>();
+    private final CircularArrayBuffer<Double> detectionFpsMonitor = new CircularArrayBuffer<>();
+    private final CircularArrayBuffer<Double> conversionFpsMonitor = new CircularArrayBuffer<>();
     private final ReentrantReadWriteLock imageProcessingLock = new ReentrantReadWriteLock();
-    private final List<Pose> anchors = new ArrayList<>();
-    private final ReentrantLock anchorLock = new ReentrantLock();
     private static final FallbackYuvToRgbConverter fallbackConverter = new FallbackYuvToRgbConverter();
+    private final TrackableAnchorManager anchorManager = new TrackableAnchorManager();
 
 
-    public ARDetectorRepository(Context context, DetectionListener listener){
+    public ARDetectorRepository(Context context, DetectionListener listener) {
         this.resultListener = listener;
         BaseOptions.Builder baseBuilder = BaseOptions.builder();
         baseBuilder.setModelAssetPath(assetPath).setDelegate(Delegate.GPU);
@@ -59,7 +59,7 @@ public class ARDetectorRepository {
                 .setScoreThreshold(0.5f)
                 .setRunningMode(RunningMode.LIVE_STREAM)
                 .setResultListener(this::returnResult)
-                .setMaxResults(3).build();
+                .setMaxResults(2).build();
         this.imageProcessingOptions = ImageProcessingOptions.builder()
                 .setRotationDegrees(0)
                 .build();
@@ -71,13 +71,13 @@ public class ARDetectorRepository {
     public boolean detectLivestreamFrame(Image image, int rotation, @Nullable YuvConverter converter) {
         long frameTime = SystemClock.uptimeMillis();
         Bitmap bitmap;
-        if (converter == null){
+        if (converter == null) {
             bitmap = fallbackConverter.yuv2rgb(image);
-        }else{
+        } else {
             bitmap = converter.yuv2rgb(image);
         }
         long deltaDetectionTime = (SystemClock.uptimeMillis() - frameTime);
-        getDetectionFpsMonitor().addQueue((double) deltaDetectionTime);
+        getDetectionFpsMonitor().add((double) deltaDetectionTime);
         double avgFPS = getDetectionFpsMonitor().averageDouble(Double::doubleValue);
         Log.i(ARDetectorRepository.class.getSimpleName(), "CONVERSION TIME: " + avgFPS);
         if (rotation != getImageRotation()) {
@@ -91,7 +91,7 @@ public class ARDetectorRepository {
         return true;
     }
 
-    private void bitmapDetection(Bitmap bitmapBuffer, long frameTime){
+    private void bitmapDetection(Bitmap bitmapBuffer, long frameTime) {
         MPImage mpImage = new BitmapImageBuilder(bitmapBuffer).build();
         imageProcessingLock.readLock().lock();
         ImageProcessingOptions build = ImageProcessingOptions.builder().setRotationDegrees(imageProcessingOptions.rotationDegrees()).build();
@@ -106,12 +106,12 @@ public class ARDetectorRepository {
         resultListener.onResult(dr);
     }
 
-    public void updateRotation(int rotation){
+    public void updateRotation(int rotation) {
         try {
             boolean success = imageProcessingLock.writeLock().tryLock(1, TimeUnit.SECONDS);
-            if (!success){
+            if (!success) {
                 throw new IllegalArgumentException("COULD NOT SECURE LOCK");
-            }else{
+            } else {
                 this.imageProcessingOptions = ImageProcessingOptions.builder().setRotationDegrees(rotation).build();
             }
         } catch (InterruptedException e) {
@@ -141,37 +141,39 @@ public class ARDetectorRepository {
         return deg;
     }
 
-    public CircularBuffer<Double> getDetectionFpsMonitor(){
+    public CircularArrayBuffer<Double> getDetectionFpsMonitor() {
         return detectionFpsMonitor;
     }
 
-    public CircularBuffer<Double> getConversionFpsMonitor() {
+    public CircularArrayBuffer<Double> getConversionFpsMonitor() {
         return conversionFpsMonitor;
     }
 
-    public void addAnchor(Pose anchorPose){
-        anchorLock.lock();
-        anchors.add(anchorPose);
-        anchorLock.unlock();
+    public Degradable<Pose> addAnchor(@NotNull Pose anchorPose) {
+        Degradable<Pose> degradable = new Degradable<>(anchorPose);
+        anchorManager.addAnchor(degradable);
+        return degradable;
     }
 
-    public AnchorProximityResult getClosestAnchor(Pose pose){
-        anchorLock.lock();
-        if (anchors.isEmpty()){
-            anchorLock.unlock();
-            return new AnchorProximityResult(-1,null);
-        }
-        Pose closestAnchor = anchors.get(0);
-        float closestProx = (float) PoseUtils.distance(closestAnchor, pose);
-        for (int i = 1; i < anchors.size(); i++) {
-            Pose anchor = anchors.get(0);
-            float distance = (float) PoseUtils.distance(anchor, pose);
-            if (distance < closestProx){
-                closestProx = distance;
-                closestAnchor = anchor;
-            }
-        }
-        anchorLock.unlock();
-        return new AnchorProximityResult(closestProx, closestAnchor);
+    @Nullable
+    public AnchorProximityResult getClosestAnchor(@NotNull Pose pose) {
+        return anchorManager.getClosestAnchor(pose);
+    }
+
+    public void degradeAnchors() {
+        anchorManager.degradeAnchors();
+    }
+
+    public List<Double> getVelocities() {
+        return anchorManager.getVelocities();
+    }
+
+    //for debugging
+    public int anchorCount() {
+        return anchorManager.getAnchorCount();
+    }
+
+    public Double getVelocity(@NotNull Degradable<Pose> pose) {
+        return anchorManager.getVelocity(pose);
     }
 }

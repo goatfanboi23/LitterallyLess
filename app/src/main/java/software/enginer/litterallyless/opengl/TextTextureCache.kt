@@ -34,6 +34,16 @@ class TextTextureCache {
             typeface = Typeface.DEFAULT_BOLD
             strokeWidth = 2f
         }
+        @JvmField
+        var purpleTextPaint = Paint().apply {
+            textSize = 26f
+            setARGB(0xff, 0x4B, 0x00, 0x82)
+            style = Paint.Style.FILL
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            strokeWidth = 2f
+        }
         private const val TAG = "TextTextureCache"
     }
 

@@ -274,6 +274,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
             );
         }
         viewModel.awaitDetection();
+        viewModel.onEndDrawFrame();
     }
 
     /**

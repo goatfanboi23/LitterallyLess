@@ -1,6 +1,7 @@
 package software.enginer.litterallyless.ui.models;
 
 import android.app.Application;
+import android.graphics.Paint;
 import android.media.Image;
 import android.util.Log;
 
@@ -30,6 +31,7 @@ import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.ui.state.LabeledAnchor;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
+import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.ResettableCountdownLatch;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 
@@ -70,17 +72,50 @@ public class ArCoreViewModel extends AndroidViewModel {
     private void onResult(DetectionResult result) {
         ObjectDetectorResult objectDetectorResult = result.getResults().get(0);
         List<LabeledAnchor> labeledAnchorList = new ArrayList<>();
+        long start = System.nanoTime();
         try {
+            //TODO: PROCESS MULTIPLE DETECTIONS AT A TIME
+
+            // iterate over detections from ai model
             labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
                 Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
                 if (anchor != null) {
                     Pose anchorPose = anchor.getPose();
+                    // find the closest anchor to the detection (TODO: account for velocity)
                     AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
-                    detectorRepository.addAnchor(anchorPose);
-                    Log.i(ArCoreViewModel.class.getSimpleName(), "PROX: " + closestAnchor.getProximity());
+                    Degradable<Pose> degradablePose;
+//                    Log.i(ArCoreViewModel.class.getSimpleName(), "ANCHOR SIZE: " + detectorRepository.anchorCount());
+
+                    // purple will mean that their is not enough information to detect if object is moving
+                    Paint paint = TextTextureCache.purpleTextPaint;
+                    if (closestAnchor != null && closestAnchor.getAnchor() != null){
+                        //offset proximity by how much we would have moved given our velocity
+                        Double velocity = detectorRepository.getVelocity(closestAnchor.getAnchor());
+                        double proximity = closestAnchor.getProximity();
+                        if (!velocity.isNaN()){
+                            proximity -= Math.sin(proximity) * (result.getInferenceTime()*(Math.abs(velocity)/1e+5));
+                        }
+                        // 0.23 meter = ~ 9 inches
+                        // if delta is > 9 inches since last frame, create a new anchor
+                        if (proximity > 0.23){
+                            Log.i(ARDetectorRepository.class.getSimpleName(), "ADDING ANCHOR");
+                            degradablePose = detectorRepository.addAnchor(anchorPose);
+                        }else{
+                            degradablePose = closestAnchor.getAnchor();
+                        }
+                        //get velocity of anchor
+                        Double vel = detectorRepository.getVelocity(degradablePose);
+                        if (!vel.isNaN()){
+                            Log.i(ArCoreViewModel.class.getSimpleName(), "VELOCITY: " + vel);
+                            //if moving (more than 5 cm per sec)[~2 inches per second], then label object with green
+                            paint = Math.abs(vel) > 3 ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
+                        }
+                    }else{
+                       detectorRepository.addAnchor(anchorPose);
+                    }
                     Category category = rect.categories().get(0);
                     String drawableText = category.categoryName() + " " + df.format(category.score());
-                    return new LabeledAnchor(anchorPose, drawableText, TextTextureCache.greenTextPaint);
+                    return new LabeledAnchor(anchorPose, drawableText, paint);
                 } else {
                     return null;
                 }
@@ -89,9 +124,11 @@ public class ArCoreViewModel extends AndroidViewModel {
             Log.e(ArCoreViewModel.class.getSimpleName(), "Error creating Anchor", e);
         }finally {
             latch.countDown();
+            long end = System.nanoTime();
+            Log.i(ArCoreViewModel.class.getSimpleName(),"ANCHOR CALC TIME:" + ((end-start)/1e+6));
         }
         double fps = 1000.0 / result.getInferenceTime();
-        detectorRepository.getDetectionFpsMonitor().addQueue(fps);
+        detectorRepository.getDetectionFpsMonitor().add(fps);
         double avgFPS = detectorRepository.getDetectionFpsMonitor().averageDouble(Double::doubleValue);
         String inferenceLabel = "AVG FPS (30 FRAMES): " + df.format(avgFPS);
         ArCoreUIState arCoreUIState = new ArCoreUIState(labeledAnchorList, inferenceLabel);
@@ -126,5 +163,8 @@ public class ArCoreViewModel extends AndroidViewModel {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+    public void onEndDrawFrame(){
+        detectorRepository.degradeAnchors();
     }
 }
