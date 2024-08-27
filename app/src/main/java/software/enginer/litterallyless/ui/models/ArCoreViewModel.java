@@ -65,74 +65,70 @@ public class ArCoreViewModel extends AndroidViewModel {
             HitResult result = hits.get(0);
             Anchor anchor = result.getTrackable().createAnchor(result.getHitPose());
             return anchor;
+
         }
         return null;
     }
 
     private void onResult(DetectionResult result) {
         ObjectDetectorResult objectDetectorResult = result.getResults().get(0);
-        List<LabeledAnchor> labeledAnchorList = new ArrayList<>();
+        List<LabeledAnchor> labeledAnchorList;
         long start = System.nanoTime();
-        try {
-            //TODO: PROCESS MULTIPLE DETECTIONS AT A TIME
+        labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
+            Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
+            if (anchor == null){
+                return null;
+            }
+            Pose anchorPose = anchor.getPose();
+            anchor.detach();
+            // find the closest anchor to the detection (TODO: account for velocity)
+            Log.i(ArCoreViewModel.class.getSimpleName(), "ANCHOR SIZE: " + detectorRepository.anchorCount());
+            AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
+            Degradable<Pose> degradablePose;
 
-            // iterate over detections from ai model
-            labeledAnchorList = objectDetectorResult.detections().stream().map(rect -> {
-                Anchor anchor = createAnchor(rect.boundingBox().centerX(), rect.boundingBox().centerY(), frame);
-                if (anchor != null) {
-                    Pose anchorPose = anchor.getPose();
-                    // find the closest anchor to the detection (TODO: account for velocity)
-                    AnchorProximityResult closestAnchor = detectorRepository.getClosestAnchor(anchorPose);
-                    Degradable<Pose> degradablePose;
-//                    Log.i(ArCoreViewModel.class.getSimpleName(), "ANCHOR SIZE: " + detectorRepository.anchorCount());
-
-                    // purple will mean that their is not enough information to detect if object is moving
-                    Paint paint = TextTextureCache.purpleTextPaint;
-                    if (closestAnchor != null && closestAnchor.getAnchor() != null){
-                        //offset proximity by how much we would have moved given our velocity
-                        Double velocity = detectorRepository.getVelocity(closestAnchor.getAnchor());
-                        double proximity = closestAnchor.getProximity();
-                        if (!velocity.isNaN()){
-                            proximity -= Math.sin(proximity) * (result.getInferenceTime()*(Math.abs(velocity)/1e+5));
-                        }
-                        // 0.23 meter = ~ 9 inches
-                        // if delta is > 9 inches since last frame, create a new anchor
-                        if (proximity > 0.23){
-                            Log.i(ARDetectorRepository.class.getSimpleName(), "ADDING ANCHOR");
-                            degradablePose = detectorRepository.addAnchor(anchorPose);
-                        }else{
-                            degradablePose = closestAnchor.getAnchor();
-                        }
-                        //get velocity of anchor
-                        Double vel = detectorRepository.getVelocity(degradablePose);
-                        if (!vel.isNaN()){
-                            Log.i(ArCoreViewModel.class.getSimpleName(), "VELOCITY: " + vel);
-                            //if moving (more than 5 cm per sec)[~2 inches per second], then label object with green
-                            paint = Math.abs(vel) > 3 ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
-                        }
-                    }else{
-                       detectorRepository.addAnchor(anchorPose);
-                    }
-                    Category category = rect.categories().get(0);
-                    String drawableText = category.categoryName() + " " + df.format(category.score());
-                    return new LabeledAnchor(anchorPose, drawableText, paint);
-                } else {
-                    return null;
+            // purple will mean that their is not enough information to detect if object is moving
+            Paint paint = TextTextureCache.purpleTextPaint;
+            if (closestAnchor != null && closestAnchor.getAnchor() != null){
+                //offset proximity by how much we would have moved given our velocity
+                Double velocity = detectorRepository.getVelocity(closestAnchor.getAnchor());
+                double proximity = closestAnchor.getProximity();
+                if (!velocity.isNaN()){
+                    proximity -= Math.sin(proximity) * (result.getInferenceTime()*(Math.abs(velocity)/1e+5));
                 }
-            }).filter(Objects::nonNull).collect(Collectors.toList());
-        }catch (Exception e) {
-            Log.e(ArCoreViewModel.class.getSimpleName(), "Error creating Anchor", e);
-        }finally {
-            latch.countDown();
-            long end = System.nanoTime();
-            Log.i(ArCoreViewModel.class.getSimpleName(),"ANCHOR CALC TIME:" + ((end-start)/1e+6));
-        }
+                Log.i(ArCoreViewModel.class.getSimpleName(), "POST_PROX: " + proximity);
+
+                // 0.23 meter = ~ 9 inches
+                // if delta is > 9 inches since last frame, create a new anchor
+                if (proximity > 0.4){
+                    Log.i(ARDetectorRepository.class.getSimpleName(), "ADDING ANCHOR");
+                    degradablePose = detectorRepository.addAnchor(anchorPose);
+                }else{
+                    degradablePose = closestAnchor.getAnchor();
+                }
+                //get velocity of anchor
+                Double vel = detectorRepository.getVelocity(degradablePose);
+                Log.i(ArCoreViewModel.class.getSimpleName(), "VELOCITY: " + vel);
+                //if moving (more than 5 cm per sec)[~2 inches per second], then label object with green            }
+                paint = !vel.isNaN() && Math.abs(vel) > 2.5 ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
+            }else{
+                Log.i(ArCoreViewModel.class.getSimpleName(), "ADDING ANCHOR :)");
+                detectorRepository.addAnchor(anchorPose);
+            }
+            Category category = rect.categories().get(0);
+            String drawableText = category.categoryName() + " " + df.format(category.score());
+            return new LabeledAnchor(anchorPose, drawableText, paint);
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.getDetectionFpsMonitor().add(fps);
         double avgFPS = detectorRepository.getDetectionFpsMonitor().averageDouble(Double::doubleValue);
         String inferenceLabel = "AVG FPS (30 FRAMES): " + df.format(avgFPS);
         ArCoreUIState arCoreUIState = new ArCoreUIState(labeledAnchorList, inferenceLabel);
         uiState.postValue(arCoreUIState);
+        new Thread(detectorRepository::degradeAnchors).start();
+        long end = System.nanoTime();
+        Log.i(ArCoreViewModel.class.getSimpleName(),"ANCHOR CALC TIME:" + ((end-start)/1e+6));
+        latch.countDown();
+
     }
 
     public LiveData<ArCoreUIState> getUiState() {
@@ -140,13 +136,6 @@ public class ArCoreViewModel extends AndroidViewModel {
     }
 
     public void detectLivestreamFrame(Image image, int rotation, @Nullable YuvConverter converter) {
-       try{
-           latch.await();
-       }catch (InterruptedException e){
-           throw new RuntimeException(e);
-       }finally {
-           latch.reset();
-       }
         boolean success = detectorRepository.detectLivestreamFrame(image, rotation, converter);
         if (!success){
             latch.countDown();
@@ -164,7 +153,7 @@ public class ArCoreViewModel extends AndroidViewModel {
             throw new RuntimeException(e);
         }
     }
-    public void onEndDrawFrame(){
-        detectorRepository.degradeAnchors();
+    public void resetDetectionLatch() {
+        latch.reset();
     }
 }

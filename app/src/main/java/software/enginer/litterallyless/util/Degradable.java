@@ -5,6 +5,9 @@ import com.google.ar.core.Pose;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lombok.EqualsAndHashCode;
+
+@EqualsAndHashCode
 public class Degradable<T> {
     private final T value;
     private final AtomicInteger ticks;

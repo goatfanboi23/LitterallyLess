@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 // average 21 millis
 public class MultiThreadedYuvConvertor implements YuvConverter{
 
-    final int THREAD_COUNT = 8;
-    final int TILES_PER_AXIS = 4;
+    final int THREAD_COUNT = 9;
+    final int TILES_PER_AXIS = 3;
 
 
     @Override

@@ -46,6 +46,7 @@ import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
 import software.enginer.litterallyless.ui.state.LabeledAnchor;
 import software.enginer.litterallyless.ui.models.ArCoreViewModel;
 import software.enginer.litterallyless.util.convertors.NativeYuvConverter;
+import software.enginer.litterallyless.util.convertors.ParallelYuvConvertor;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 
 public class ArCoreFragment extends Fragment implements Renderer {
@@ -199,9 +200,16 @@ public class ArCoreFragment extends Fragment implements Renderer {
             }
         });
     }
+    long lastOnDraw = -1;
 
     @Override
     public void onDrawFrame(SampleRender render) {
+        long now = System.nanoTime();
+        if (lastOnDraw != -1){
+            double delta = ((now - lastOnDraw)/ 1e6);
+            Log.i(ArCoreFragment.class.getSimpleName(),"(MS) TIME SINCE LAST DRAW: " + delta + ", FPS: " + 1000.0/delta);
+        }
+        lastOnDraw = now;
         if (session == null) {
             return;
         }
@@ -229,13 +237,11 @@ public class ArCoreFragment extends Fragment implements Renderer {
         }
 
         backgroundRenderer.updateDisplayGeometry(frame);
-
         if (camera.getTrackingState() == TrackingState.TRACKING
                 && (session.getConfig().getDepthMode() == Config.DepthMode.AUTOMATIC)) {
             try (Image depthImage = frame.acquireDepthImage16Bits()) {
                 backgroundRenderer.updateCameraDepthTexture(depthImage);
-            } catch (NotYetAvailableException ignored) {
-            }
+            } catch (NotYetAvailableException ignored) {}
         }
         long timestamp = frame.getTimestamp();
         if (timestamp != 0) {
@@ -257,13 +263,16 @@ public class ArCoreFragment extends Fragment implements Renderer {
         } catch (NotYetAvailableException e) {
             cameraImage = null;
         }
+
         if (cameraImage != null) {
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
             Image finalCameraImage = cameraImage;
+            viewModel.resetDetectionLatch();
             backgroundExecutor.execute(()-> {
                 viewModel.detectLivestreamFrame(finalCameraImage, rot, converter);
             });
         }
+        viewModel.awaitDetection();
         List<LabeledAnchor> anchors = viewModel.getUiState().getValue().getLabeledAnchorList();
         for (LabeledAnchor labeledAnchor : anchors) {
             labelRenderer.draw(
@@ -273,8 +282,6 @@ public class ArCoreFragment extends Fragment implements Renderer {
                     camera.getPose()
             );
         }
-        viewModel.awaitDetection();
-        viewModel.onEndDrawFrame();
     }
 
     /**
@@ -282,6 +289,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
      */
     private void configureSession() {
         Config config = session.getConfig();
+        config.setFocusMode(Config.FocusMode.AUTO);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
         } else {

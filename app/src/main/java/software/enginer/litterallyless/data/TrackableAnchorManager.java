@@ -65,12 +65,12 @@ public class TrackableAnchorManager {
         float closestProx = Float.MAX_VALUE;
         for (Degradable<Pose> anchor : anchorStateMap.keySet()) {
             float distance = (float) PoseUtils.distance(anchor.getValue(), pose);
-            if (distance < closestProx) {
+            if (closestAnchor == null || distance < closestProx) {
                 closestProx = distance;
                 closestAnchor = anchor;
             }
         }
-        if (closestProx < 0.075) {
+        if (closestProx < 0.3) {
             Log.i(TrackableAnchorManager.class.getSimpleName(), "UPDATING BUFFER!");
             closestAnchor = moveToPoses(closestAnchor, pose);
         }
