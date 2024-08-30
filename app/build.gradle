@@ -1,6 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id "idea"
+}
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
 }
 android.buildFeatures.buildConfig true
 android {
@@ -53,7 +60,7 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.30.2"
+            version "3.30.3"
         }
     }
 }
@@ -95,6 +102,15 @@ dependencies {
     //ar core
     implementation 'com.google.ar:core:1.45.0'
 
+    // apache math
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+
+
     // opencv with contrib
     //    implementation "com.quickbirdstudios:opencv-contrib:4.5.3.0"
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

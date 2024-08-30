@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import software.enginer.litterallyless.data.AnchorProximityResult;
 import software.enginer.litterallyless.data.DetectionListener;
 import software.enginer.litterallyless.data.DetectionResult;
+import software.enginer.litterallyless.data.Trackable;
 import software.enginer.litterallyless.data.TrackableAnchorManager;
 import software.enginer.litterallyless.data.TrashModel;
 import software.enginer.litterallyless.util.CircularArrayBuffer;
@@ -57,7 +58,7 @@ public class ARDetectorRepository {
                 .setScoreThreshold(0.5f)
                 .setRunningMode(RunningMode.LIVE_STREAM)
                 .setResultListener(this::returnResult)
-                .setMaxResults(2).build();
+                .setMaxResults(4).build();
         this.imageProcessingOptions = ImageProcessingOptions.builder()
                 .setRotationDegrees(0)
                 .build();
@@ -125,31 +126,7 @@ public class ARDetectorRepository {
         return conversionFpsMonitor;
     }
 
-    public Degradable<Pose> addAnchor(@NotNull Pose anchorPose) {
-        Degradable<Pose> degradable = new Degradable<>(anchorPose);
-        anchorManager.addAnchor(degradable);
-        return degradable;
-    }
-
-    @Nullable
-    public AnchorProximityResult getClosestAnchor(@NotNull Pose pose) {
-        return anchorManager.getClosestAnchor(pose);
-    }
-
-    public void degradeAnchors() {
-        anchorManager.degradeAnchors();
-    }
-
-    public List<Double> getVelocities() {
-        return anchorManager.getVelocities();
-    }
-
-    //for debugging
-    public int anchorCount() {
-        return anchorManager.getAnchorCount();
-    }
-
-    public Double getVelocity(@NotNull Degradable<Pose> pose) {
-        return anchorManager.getVelocity(pose);
+    public TrackableAnchorManager getAnchorManager() {
+        return anchorManager;
     }
 }

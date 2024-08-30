@@ -267,12 +267,12 @@ public class ArCoreFragment extends Fragment implements Renderer {
         if (cameraImage != null) {
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
             Image finalCameraImage = cameraImage;
-            viewModel.resetDetectionLatch();
+            viewModel.setFrameInUse();
             backgroundExecutor.execute(()-> {
                 viewModel.detectLivestreamFrame(finalCameraImage, rot, converter);
             });
         }
-        viewModel.awaitDetection();
+        viewModel.waitUntilFrameFree();
         List<LabeledAnchor> anchors = viewModel.getUiState().getValue().getLabeledAnchorList();
         for (LabeledAnchor labeledAnchor : anchors) {
             labelRenderer.draw(
