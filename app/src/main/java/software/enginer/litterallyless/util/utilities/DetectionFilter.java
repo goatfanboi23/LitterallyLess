@@ -17,11 +17,11 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class DetectionFilter {
 
-    private static final double defaultMeasurementNoise = 0.01d;
-    private static final double defaultProcessNoise = 0.001d;
+    private static final double defaultMeasurementNoise = 0.5d;
+    private static final double defaultProcessNoise = 0.05d;
 
-    // State vector [x, y, z, vx, vy, vz] (X)
-    private RealVector stateEstimation = new ArrayRealVector(6);
+    // State vector [x, y, z, vx, vy, vz, ax, ay, az] (X)
+    private RealVector stateEstimation;
 
     //  Measurement -> State transition matrix (A)
     private RealMatrix stateTransitionMatrix;
@@ -41,20 +41,20 @@ public class DetectionFilter {
     }
 
     public DetectionFilter(double processNoise, double measurementNoise, Pose initialPose) {
-        this.stateTransitionMatrix = MatrixUtils.createRealIdentityMatrix(6); // dt = 0
+        this.stateTransitionMatrix = MatrixUtils.createRealIdentityMatrix(9); // dt = 0
 
-        this.processNoiseMatrix = MatrixUtils.createRealIdentityMatrix(6).scalarMultiply(processNoise * processNoise);
+        this.processNoiseMatrix = MatrixUtils.createRealIdentityMatrix(9).scalarMultiply(processNoise * processNoise);
         this.measurementNoiseMatrix = MatrixUtils.createRealIdentityMatrix(3).scalarMultiply(measurementNoise * measurementNoise);
 
-        // state will have [x, y, z, vx, vy, vz], however measurements will only have [x, y, z] this matrix states that
+        // state will have [x, y, z, vx, vy, vz, ax, ay, az], however measurements will only have [x, y, z] this matrix states that
         measurementMatrix = MatrixUtils.createRealMatrix(new double[][]{
-                {1, 0, 0, 0, 0, 0},
-                {0, 1, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0, 0}
+                {1, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 1, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 1, 0, 0, 0, 0, 0, 0}
         });
 
         stateEstimation = new ArrayRealVector(new double[]{
-                initialPose.tx(), initialPose.ty(), initialPose.tz(), 0, 0, 0
+                initialPose.tx(), initialPose.ty(), initialPose.tz(), 0, 0, 0, 0 ,0 ,0
         });
 
         //pose within meter, velocity within 0.5 meters per second (~ 20 inches per second)
@@ -71,14 +71,18 @@ public class DetectionFilter {
 
     public void predict(long timestamp) {
         long dt = timestamp - lastTimeStep;
+        double at = 0.5 * dt * dt;
         lastTimeStep = timestamp;
         stateTransitionMatrix = MatrixUtils.createRealMatrix(new double[][]{
-                {1, 0, 0, dt, 0, 0},
-                {0, 1, 0, 0, dt, 0},
-                {0, 0, 1, 0, 0, dt},
-                {0, 0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 1, 0},
-                {0, 0, 0, 0, 0, 1}
+                {1, 0, 0, dt, 0, 0 , at, 0, 0},
+                {0, 1, 0, 0, dt, 0, 0, at, 0},
+                {0, 0, 1, 0, 0, dt, 0, 0, at},
+                {0, 0, 0, 1, 0, 0, dt, 0, 0},
+                {0, 0, 0, 0, 1, 0, 0, dt, 0},
+                {0, 0, 0, 0, 0, 1, 0, 0, dt},
+                {0, 0, 0, 0, 0, 0, 1, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 1, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 1}
         });
         stateEstimation = stateTransitionMatrix.operate(stateEstimation);
         errorMatrix = stateTransitionMatrix.multiply(errorMatrix).multiply(stateTransitionMatrix.transpose()).add(processNoiseMatrix);
