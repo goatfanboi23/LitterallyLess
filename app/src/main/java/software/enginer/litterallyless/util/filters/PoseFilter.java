@@ -1,4 +1,4 @@
-package software.enginer.litterallyless.util.utilities;
+package software.enginer.litterallyless.util.filters;
 
 import com.google.ar.core.Pose;
 

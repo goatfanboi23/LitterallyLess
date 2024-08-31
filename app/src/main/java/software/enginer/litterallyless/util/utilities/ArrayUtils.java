@@ -3,8 +3,6 @@ package software.enginer.litterallyless.util.utilities;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
-import software.enginer.litterallyless.util.FilterResult;
-
 public class ArrayUtils {
     public static <T> boolean allValid(T[] array, Predicate<T> predicate) {
         boolean matched = true;

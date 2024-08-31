@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.opengl.GLES30
-import software.enginer.litterallyless.data.PaintedString
 import software.enginer.litterallyless.opengl.renderers.SampleRender
 import java.nio.ByteBuffer
 
@@ -55,7 +54,12 @@ class TextTextureCache {
      * and cache the result.
      */
     fun get(render: SampleRender, string: String, textPaint: Paint): Texture {
-        return cacheMap.computeIfAbsent(PaintedString(string,textPaint)) {
+        return cacheMap.computeIfAbsent(
+            PaintedString(
+                string,
+                textPaint
+            )
+        ) {
             generateTexture(render, string, textPaint)
         }
     }

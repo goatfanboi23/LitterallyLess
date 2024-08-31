@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import software.enginer.litterallyless.util.FilterResult;
-
 public class ListUtils {
     public static <T> FilterResult<T> filter(List<T> list, Predicate<T> predicate) {
         ArrayList<T> accepted = new ArrayList<>();

@@ -1,10 +1,8 @@
-package software.enginer.litterallyless.data;
+package software.enginer.litterallyless.opengl;
 
 import android.graphics.Paint;
 
 import java.util.Objects;
-
-import lombok.Data;
 
 public class PaintedString {
     private final String string;

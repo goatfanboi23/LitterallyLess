@@ -1,4 +1,4 @@
-package software.enginer.litterallyless.util;
+package software.enginer.litterallyless.util.utilities;
 
 import androidx.annotation.NonNull;
 

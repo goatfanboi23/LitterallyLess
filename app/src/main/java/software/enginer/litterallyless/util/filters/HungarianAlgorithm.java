@@ -1,6 +1,4 @@
-package software.enginer.litterallyless.util;
-
-import android.util.Log;
+package software.enginer.litterallyless.util.filters;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;

@@ -1,9 +1,8 @@
-package software.enginer.litterallyless;
+package software.enginer.litterallyless.util.filters;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

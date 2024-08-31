@@ -10,7 +10,7 @@ import androidx.core.app.ActivityCompat;
 import java.util.ArrayList;
 import java.util.List;
 
-import software.enginer.litterallyless.util.FilterResult;
+import software.enginer.litterallyless.util.utilities.FilterResult;
 import software.enginer.litterallyless.util.utilities.ListUtils;
 
 

@@ -8,8 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.TimestampedCircularBuffer;
-import software.enginer.litterallyless.util.utilities.MovingAverageFilter;
-import software.enginer.litterallyless.util.utilities.PoseFilter;
+import software.enginer.litterallyless.util.filters.PoseFilter;
 
 @Data
 public class Trackable {

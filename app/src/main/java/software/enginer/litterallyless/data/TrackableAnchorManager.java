@@ -4,7 +4,6 @@ import android.util.Log;
 
 import com.google.ar.core.Pose;
 
-import org.apache.commons.math3.linear.RealVector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -13,11 +12,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import software.enginer.litterallyless.CostProximityResult;
+import software.enginer.litterallyless.util.filters.CostProximityResult;
 import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.TimestampedCircularBuffer;
-import software.enginer.litterallyless.util.utilities.MovingAverageFilter;
-import software.enginer.litterallyless.util.utilities.PoseFilter;
+import software.enginer.litterallyless.util.filters.PoseFilter;
 import software.enginer.litterallyless.util.utilities.PoseUtils;
 
 public class TrackableAnchorManager {

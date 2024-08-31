@@ -4,7 +4,6 @@ import android.app.Application;
 import android.graphics.Paint;
 import android.media.Image;
 import android.util.Log;
-import android.view.Choreographer;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,7 +29,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import software.enginer.litterallyless.CostProximityResult;
+import software.enginer.litterallyless.util.filters.CostProximityResult;
 import software.enginer.litterallyless.data.Trackable;
 import software.enginer.litterallyless.opengl.TextTextureCache;
 import software.enginer.litterallyless.data.repos.ARDetectorRepository;
@@ -39,7 +38,7 @@ import software.enginer.litterallyless.data.DetectionResult;
 import software.enginer.litterallyless.ui.state.LabeledAnchor;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.Degradable;
-import software.enginer.litterallyless.util.HungarianAlgorithm;
+import software.enginer.litterallyless.util.filters.HungarianAlgorithm;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 
 public class ArCoreViewModel extends AndroidViewModel {
