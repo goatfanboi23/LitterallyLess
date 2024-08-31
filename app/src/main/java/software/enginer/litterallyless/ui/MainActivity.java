@@ -23,6 +23,7 @@ import software.enginer.litterallyless.perms.CameraPermTransition;
 import software.enginer.litterallyless.perms.LocationPermTransition;
 import software.enginer.litterallyless.ui.fragments.ArCoreFragment;
 import software.enginer.litterallyless.ui.fragments.DetectionFragment;
+import software.enginer.litterallyless.ui.fragments.SettingsFragment;
 import software.enginer.litterallyless.util.perms.PermissionRequester;
 
 public class MainActivity extends AppCompatActivity {
@@ -65,8 +66,13 @@ public class MainActivity extends AppCompatActivity {
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
 
         activityMainBinding.navBar.setOnItemSelectedListener(menuItem -> {
-            if (menuItem.getItemId() == R.id.camera_menu_item) {
-                camPermRequest.request();
+            if (menuItem.getItemId() == R.id.settings_menu_item) {
+                runOnUiThread(() -> {
+                    getSupportFragmentManager().beginTransaction()
+                            .setReorderingAllowed(true)
+                            .replace(R.id.fragment_container, SettingsFragment.class, null)
+                            .commitNow();
+                });
             } else if (menuItem.getItemId() == R.id.ar_menu_item) {
                 arPermRequest.request();
             } else if (menuItem.getItemId() == R.id.map_menu_item) {

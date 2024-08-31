@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.ArCoreApk.Availability;
@@ -37,7 +38,9 @@ import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +48,11 @@ import java.util.concurrent.TimeUnit;
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
 import software.enginer.litterallyless.ui.state.LabeledAnchor;
 import software.enginer.litterallyless.ui.models.ArCoreViewModel;
+import software.enginer.litterallyless.util.convertors.FallbackYuvToRgbConverter;
+import software.enginer.litterallyless.util.convertors.MultiThreadedYuvConvertor;
 import software.enginer.litterallyless.util.convertors.NativeYuvConverter;
 import software.enginer.litterallyless.util.convertors.ParallelYuvConvertor;
+import software.enginer.litterallyless.util.convertors.RenderscriptYuv2Rgb;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
 
 public class ArCoreFragment extends Fragment implements Renderer {
@@ -76,6 +82,12 @@ public class ArCoreFragment extends Fragment implements Renderer {
     private ExecutorService backgroundExecutor;
     private SampleRender renderer;
     private YuvConverter converter;
+    private static final Map<String, YuvConverter> convertorMap = Map.of(
+            "jni", new NativeYuvConverter(),
+            "legacy", new FallbackYuvToRgbConverter(),
+            "multithreaded", new MultiThreadedYuvConvertor(),
+            "parallelism", new ParallelYuvConvertor()
+    );
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -96,7 +108,11 @@ public class ArCoreFragment extends Fragment implements Renderer {
         viewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
             binding.inferenceTextView.setText(detectionUIState.getInferenceLabel());
         });
-        this.converter = new NativeYuvConverter();
+        String selected = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString("convertor","jni");
+        this.converter = convertorMap.get(selected);
+        if (converter == null){
+            converter = new RenderscriptYuv2Rgb(requireContext());
+        }
     }
 
     @Override

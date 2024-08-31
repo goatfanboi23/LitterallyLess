@@ -61,7 +61,7 @@ public class MapFragment extends Fragment {
         assert getActivity() != null;
         litterallyLess = (LitterallyLess) getActivity().getApplication();
         //load viewModel
-        viewModel = new ViewModelProvider(getActivity()).get(MapViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(MapViewModel.class);
 
         mapView = binding.mapView;
         //load plugins

@@ -1,6 +1,7 @@
 package software.enginer.litterallyless.ui.models;
 
 import android.app.Application;
+import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.media.Image;
 import android.util.Log;
@@ -10,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.preference.PreferenceManager;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Coordinates2d;

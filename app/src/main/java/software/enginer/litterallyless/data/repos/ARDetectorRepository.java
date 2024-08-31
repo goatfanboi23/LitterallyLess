@@ -6,6 +6,9 @@ import android.media.Image;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.preference.ListPreference;
+import androidx.preference.PreferenceManager;
+
 import com.google.ar.core.Pose;
 import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
@@ -51,8 +54,16 @@ public class ARDetectorRepository {
 
     public ARDetectorRepository(Context context, DetectionListener listener) {
         this.resultListener = listener;
+        // TODO: decouple preferences with repo (this is just for testing)
+        String delete = PreferenceManager.getDefaultSharedPreferences(context).getString("delegate","cpu");
+        Delegate delegate;
+        try{
+            delegate = Delegate.valueOf(delete.toUpperCase());
+        }catch (IllegalArgumentException e){
+            delegate = Delegate.CPU;
+        }
         BaseOptions.Builder baseBuilder = BaseOptions.builder();
-        baseBuilder.setModelAssetPath(assetPath).setDelegate(Delegate.GPU);
+        baseBuilder.setModelAssetPath(assetPath).setDelegate(delegate);
         ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder()
                 .setBaseOptions(baseBuilder.build())
                 .setScoreThreshold(0.5f)
