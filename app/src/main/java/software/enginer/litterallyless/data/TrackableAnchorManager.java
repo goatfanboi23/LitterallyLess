@@ -1,5 +1,7 @@
 package software.enginer.litterallyless.data;
 
+import android.util.Log;
+
 import com.google.ar.core.Pose;
 
 import org.apache.commons.math3.linear.RealVector;
@@ -14,7 +16,8 @@ import java.util.stream.Collectors;
 import software.enginer.litterallyless.CostProximityResult;
 import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.TimestampedCircularBuffer;
-import software.enginer.litterallyless.util.utilities.DetectionFilter;
+import software.enginer.litterallyless.util.utilities.MovingAverageFilter;
+import software.enginer.litterallyless.util.utilities.PoseFilter;
 import software.enginer.litterallyless.util.utilities.PoseUtils;
 
 public class TrackableAnchorManager {
@@ -27,7 +30,7 @@ public class TrackableAnchorManager {
             while (iterator.hasNext()) {
                 Trackable entry = iterator.next();
                 int ticks = entry.getCurrentPose().incrementAndGetTicks();
-                if (ticks >= 20) {
+                if (ticks >= 10) {
                     iterator.remove();
                 }
             }
@@ -43,18 +46,34 @@ public class TrackableAnchorManager {
         }
     }
 
-    public void moveToPoses(@NotNull Trackable trackable, @NotNull Pose newPose){
-        Pose oldPose = trackable.getCurrentPose().getValue();
+    public boolean moveToPoses(@NotNull Trackable trackable, @NotNull Pose newPose){
         trackable.getCurrentPose().setValue(newPose);
         trackable.getCurrentPose().refresh();
-        trackable.getPoseBuffer().addStamped(oldPose);
         //update filter
-        trackable.getFilter().predict(System.nanoTime());
         trackable.getFilter().update(newPose);
+        trackable.getPoseBuffer().addStamped(trackable.getFilter().getPose());
+        Double velocity = getVelocity(trackable);
+        Log.i(TrackableAnchorManager.class.getSimpleName(), "VELOCITY: " + velocity);
+
+        if (!velocity.isNaN() && !velocity.isInfinite() && Math.abs(velocity) > 6){
+            int increaseAmount = Math.min(3, ((int) Math.abs(velocity)) / 6);
+            int count = trackable.getCollectionsThresholdCounter().addAndGet(increaseAmount);
+            Log.i(TrackableAnchorManager.class.getSimpleName(), "COUNT: " + count);
+            boolean result = count >= 30;
+            if (result){
+                trackable.getCollected().set(true);
+            }
+            return result;
+        }else{
+            trackable.getCollectionsThresholdCounter().set(0);
+            return false;
+        }
     }
 
     public void addTrackable(@NotNull Degradable<Pose> poseDegradable) {
-        tracks.add(new Trackable(poseDegradable, new TimestampedCircularBuffer<>(10), new DetectionFilter(poseDegradable.getValue())));
+        PoseFilter filter = new PoseFilter(0.9f);
+        filter.update(poseDegradable.getValue());
+        tracks.add(new Trackable(poseDegradable, new TimestampedCircularBuffer<>(10), filter));
     }
 
     public double[] getMetersToAnchors(@NotNull Pose pose){
@@ -89,17 +108,6 @@ public class TrackableAnchorManager {
         }
         double meterPerNano = poseBuffer.queryChangeOverTime(PoseUtils::distance);
         return meterPerNano * 1e+11; // centimeters per second
-    }
-    public void updateFilter(){
-
-    }
-
-    public Double estimatedVelocity(@NotNull Trackable pose){
-        RealVector state = pose.getFilter().getState();
-        double vx = state.getEntry(3);
-        double vy = state.getEntry(4);
-        double vz = state.getEntry(5);
-        return Math.sqrt(vx*vx + vy*vy + vz*vz);
     }
 
 }

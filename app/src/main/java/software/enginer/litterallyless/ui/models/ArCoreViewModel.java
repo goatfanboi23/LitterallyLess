@@ -128,6 +128,7 @@ public class ArCoreViewModel extends AndroidViewModel {
         List<LabeledAnchor> labeledAnchorList = new ArrayList<>();;
         int trackerCount = detectorRepository.getAnchorManager().getTrackerCount();
         int detectionCount = readings.size();
+        Log.i(ArCoreViewModel.class.getSimpleName(),"TRACKER COUNT: " + trackerCount+ "DETECTION COUNT: " + detectionCount);
         int dim = Math.max(trackerCount, detectionCount);
         int[][] costMatrix = new int[dim][dim];
         List<Integer> dummyRows = new ArrayList<>();
@@ -154,7 +155,7 @@ public class ArCoreViewModel extends AndroidViewModel {
             int minCost;
             if (proxResults.getMinCostIndex() != -1){
                 minCost = rowCosts[proxResults.getMinCostIndex()];
-                if (minCost > 0.5* 1e+6){
+                if (minCost > 0.3 * 1e+6){
                     Log.i(ArCoreViewModel.class.getSimpleName(),"ROW : " + row + ", MIN COST:" + minCost);
                     dummyRows.add(row);
                     //Add detection to list that will be assigned a new track after the track assignment algorithm finishes assigning other tracks
@@ -207,7 +208,7 @@ public class ArCoreViewModel extends AndroidViewModel {
         //Apply a filter to create tracks for detections whose cost is too high to be assigned to any track
         HungarianAlgorithm associationAlgo = null;
         try {
-            Log.i(ArCoreViewModel.class.getSimpleName(), "COST MATRIX SIZE: " + costMatrix.length + " : " + costMatrix[0].length + " : " + (costMatrix.length == costMatrix[0].length));
+            Log.i(ArCoreViewModel.class.getSimpleName(), "COST MATRIX SIZE: " + costMatrix.length + " : " + costMatrix[0].length);
             associationAlgo = new HungarianAlgorithm(costMatrix);
         } catch (IllegalAccessException e) {
             Log.e(ArCoreViewModel.class.getSimpleName(), "Matrix is not square", e);
@@ -226,18 +227,16 @@ public class ArCoreViewModel extends AndroidViewModel {
             //check if detection or track are "dummy" track/detections
             boolean isDummyCol = dummyCols.contains(trackColId);
             boolean isDummyRow = dummyRows.contains(detectionRowId);
-
+            Log.i(ArCoreViewModel.class.getSimpleName(),"STATES {\n\t" +
+                    "COL DUMMY: " + isDummyCol +"@ "+trackColId+ "," +
+                    "\n\tROW DUMMY: " + isDummyRow + "@ " +detectionRowId +
+                    "\n}");
             //detection was parred with a dummy track
             if (isDummyCol && !isDummyRow){
                 // create track for detection (dummy was created because the number of detections was greater than the number of tracks)
+                Log.i(ArCoreViewModel.class.getSimpleName(),"CREATING TRACK FOR DETECTION");
                 Degradable<Pose> degradable = new Degradable<>(readings.get(detectionRowId).getPose());
                 detectorRepository.getAnchorManager().addTrackable(degradable);
-//                DetectionReading detectionReading = readings.get(detectionRowId);
-                // setup to be rendered
-//                Category category = detectionReading.getCategory();
-//                String drawableText = category.categoryName() + " " + df.format(category.score());
-//                LabeledAnchor la = new LabeledAnchor(detectionReading.getPose(), drawableText, TextTextureCache.greenTextPaint);
-//                labeledAnchorList.add(la);
             } else if (!isDummyCol && !isDummyRow) {
                 List<AnchorProximityResult> rowResults = rowProxMap.get(detectionRowId);
                 if (rowResults == null) {
@@ -251,23 +250,21 @@ public class ArCoreViewModel extends AndroidViewModel {
                 Trackable track = trackable.getTrack();
                 Pose detectionPose = detectionReading.getPose();
                 if (track != null) {
-                    detectorRepository.getAnchorManager().moveToPoses(track, detectionPose);
-                    Double vel =  detectorRepository.getAnchorManager().getVelocity(track);
-                    Log.i(ArCoreViewModel.class.getSimpleName(), "VELOCITY BUF: " + vel + "VEL KAL: " + detectorRepository.getAnchorManager().estimatedVelocity(track)* 1e+11);
-                    Paint paint = !vel.isNaN() && Math.abs(vel) > 7.5 ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
+                    boolean moving = detectorRepository.getAnchorManager().moveToPoses(track, detectionPose);
+                    Paint paint = trackable.getTrack().getCollected().get() ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
                     //for now we will render here for debugging
                     Category category = detectionReading.getCategory();
                     String drawableText = category.categoryName() + " " + df.format(category.score());
                     LabeledAnchor la = new LabeledAnchor(detectionPose, drawableText, paint);
                     labeledAnchorList.add(la);
                 } else {
-                    //Log.w(ArCoreViewModel.class.getSimpleName(), "Trackable Not Found in Proximity Result");
+                    Log.w(ArCoreViewModel.class.getSimpleName(), "Trackable Not Found in Proximity Result");
                     continue;
                 }
 
             } else { // detection dummy was created because their were more tracks then detections
                 //do nothing (don't refresh)
-                //Log.i(ArCoreViewModel.class.getSimpleName(), "Trackable Not assigned to detection");
+                Log.i(ArCoreViewModel.class.getSimpleName(), "Trackable Not assigned to detection");
             }
         }
 
@@ -276,8 +273,8 @@ public class ArCoreViewModel extends AndroidViewModel {
             detectorRepository.getAnchorManager().addTrackable(degradable);
             Category category = reading.getCategory();
             String drawableText = category.categoryName() + " " + df.format(category.score());
-            LabeledAnchor la = new LabeledAnchor(reading.getPose(), drawableText, TextTextureCache.greenTextPaint);
-//            labeledAnchorList.add(la);
+            LabeledAnchor la = new LabeledAnchor(reading.getPose(), drawableText, TextTextureCache.purpleTextPaint);
+            labeledAnchorList.add(la);
         });
         detectorRepository.getAnchorManager().degradeAnchors();
         double fps = 1000.0 / result.getInferenceTime();
@@ -288,9 +285,6 @@ public class ArCoreViewModel extends AndroidViewModel {
         uiState.postValue(arCoreUIState);
         long end = System.nanoTime();
         Log.i(ArCoreViewModel.class.getSimpleName(), "TRACKABLE CALC TIME:" + ((end - start) / 1e+6));
-
-
-
     }
 
     public LiveData<ArCoreUIState> getUiState() {

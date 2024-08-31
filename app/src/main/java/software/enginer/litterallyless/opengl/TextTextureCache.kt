@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.opengl.GLES30
+import software.enginer.litterallyless.data.PaintedString
 import software.enginer.litterallyless.opengl.renderers.SampleRender
 import java.nio.ByteBuffer
 
@@ -47,14 +48,14 @@ class TextTextureCache {
         private const val TAG = "TextTextureCache"
     }
 
-    private val cacheMap = mutableMapOf<String, Texture>()
+    private val cacheMap = mutableMapOf<PaintedString, Texture>()
 
     /**
      * Get a texture for a given string. If that string hasn't been used yet, create a texture for it
      * and cache the result.
      */
     fun get(render: SampleRender, string: String, textPaint: Paint): Texture {
-        return cacheMap.computeIfAbsent(string) {
+        return cacheMap.computeIfAbsent(PaintedString(string,textPaint)) {
             generateTexture(render, string, textPaint)
         }
     }
@@ -87,8 +88,12 @@ class TextTextureCache {
         return texture
     }
 
-    val strokePaint = Paint(redTextPaint).apply {
+    val strokePaint = Paint().apply {
         setARGB(0xff, 0x00, 0x00, 0x00)
+        textSize = 26f
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.DEFAULT_BOLD
+        strokeWidth = 2f
         style = Paint.Style.STROKE
     }
 
