@@ -1,7 +1,6 @@
 package software.enginer.litterallyless.ui.models;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.media.Image;
 import android.util.Log;
@@ -11,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.preference.PreferenceManager;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Coordinates2d;
@@ -31,6 +29,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import software.enginer.litterallyless.data.DetectionReading;
 import software.enginer.litterallyless.util.filters.CostProximityResult;
 import software.enginer.litterallyless.data.Trackable;
 import software.enginer.litterallyless.opengl.TextTextureCache;
@@ -129,7 +128,6 @@ public class ArCoreViewModel extends AndroidViewModel {
         List<LabeledAnchor> labeledAnchorList = new ArrayList<>();;
         int trackerCount = detectorRepository.getAnchorManager().getTrackerCount();
         int detectionCount = readings.size();
-        Log.d(ArCoreViewModel.class.getSimpleName(),"TRACKER COUNT: " + trackerCount+ "DETECTION COUNT: " + detectionCount);
         int dim = Math.max(trackerCount, detectionCount);
         int[][] costMatrix = new int[dim][dim];
         List<Integer> dummyRows = new ArrayList<>();
@@ -279,7 +277,6 @@ public class ArCoreViewModel extends AndroidViewModel {
         detectorRepository.getAnchorManager().degradeAnchors();
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.getDetectionFpsMonitor().add(fps);
-        double avgFPS = detectorRepository.getDetectionFpsMonitor().averageDouble(Double::doubleValue);
         ArCoreUIState value = uiState.getValue();
         if (value != null){
             String label = value.getInferenceLabel();

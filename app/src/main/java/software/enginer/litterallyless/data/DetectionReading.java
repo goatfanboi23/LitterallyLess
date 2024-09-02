@@ -1,4 +1,4 @@
-package software.enginer.litterallyless.ui.models;
+package software.enginer.litterallyless.data;
 
 import com.google.ar.core.Pose;
 import com.google.mediapipe.tasks.components.containers.Category;
