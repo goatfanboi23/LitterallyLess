@@ -20,6 +20,7 @@ import com.squareup.picasso.Picasso;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
+import jp.wasabeef.picasso.transformations.RoundedCornersTransformation;
 import software.enginer.litterallyless.BuildConfig;
 import software.enginer.litterallyless.perms.TransitionPermissionRequester;
 import software.enginer.litterallyless.ui.fragments.FirebaseUIFragment;
@@ -83,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         firebaseViewModel.getUIState().observe(this, state -> {
             if (!userStateHasInitialized.getAndSet(true)) return;
             activityMainBinding.username.setText(state.getUsername());
-            Picasso.get().load(state.getProfileURI()).into(activityMainBinding.userIcon);
+            Picasso.get().load(state.getProfileURI()).transform(new RoundedCornersTransformation(20,0)).into(activityMainBinding.userIcon);
             activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
         });
 
