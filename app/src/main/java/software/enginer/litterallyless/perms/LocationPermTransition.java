@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 
 
 public class LocationPermTransition extends TransitionPermissionRequester<String[]> {
-    private static final String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION};
+    private static final String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
     private static final String[] rationals = {"Needed to approximate location on map", "Needed to get precise location on map"};
 
 

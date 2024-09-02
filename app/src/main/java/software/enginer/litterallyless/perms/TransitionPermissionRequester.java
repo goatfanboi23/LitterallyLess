@@ -5,6 +5,10 @@ import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import org.checkerframework.checker.units.qual.N;
+
+import software.enginer.litterallyless.util.ConditionalFunction;
+import software.enginer.litterallyless.util.NavItemSectionListener;
 import software.enginer.litterallyless.util.perms.LoggablePermissionRequester;
 
 public abstract class TransitionPermissionRequester<T> extends LoggablePermissionRequester<T> {

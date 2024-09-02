@@ -51,12 +51,12 @@ public class TrackableAnchorManager {
         trackable.getFilter().update(newPose);
         trackable.getPoseBuffer().addStamped(trackable.getFilter().getPose());
         Double velocity = getVelocity(trackable);
-        Log.i(TrackableAnchorManager.class.getSimpleName(), "VELOCITY: " + velocity);
+        Log.d(TrackableAnchorManager.class.getSimpleName(), "VELOCITY: " + velocity);
 
         if (!velocity.isNaN() && !velocity.isInfinite() && Math.abs(velocity) > 6){
             int increaseAmount = Math.min(3, ((int) Math.abs(velocity)) / 6);
             int count = trackable.getCollectionsThresholdCounter().addAndGet(increaseAmount);
-            Log.i(TrackableAnchorManager.class.getSimpleName(), "COUNT: " + count);
+            Log.d(TrackableAnchorManager.class.getSimpleName(), "COUNT: " + count);
             boolean result = count >= 30;
             if (result){
                 trackable.getCollected().set(true);

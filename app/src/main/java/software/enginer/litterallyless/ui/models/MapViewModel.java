@@ -3,6 +3,7 @@ package software.enginer.litterallyless.ui.models;
 import android.location.Location;
 import android.util.Log;
 
+import androidx.annotation.UiThread;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
@@ -27,7 +28,7 @@ import software.enginer.litterallyless.ui.state.MapUiState;
 import software.enginer.litterallyless.util.utilities.MapUtils;
 
 public class MapViewModel extends ViewModel {
-    private final MutableLiveData<MapUiState> uiState = new MutableLiveData<>();
+    private final MutableLiveData<MapUiState> uiState = new MutableLiveData<>(new MapUiState());
     private final MapRepository mapRepository;
 
 
@@ -73,9 +74,8 @@ public class MapViewModel extends ViewModel {
                 }
         );
     }
-
-    public void observe(LifecycleOwner lifecycleOwner,  Observer<? super MapUiState> observer) {
-        uiState.observe(lifecycleOwner, observer);
+    @UiThread
+    public void loadUserLocation(){
         CameraState cameraState = mapRepository.getUserInitialLocation();
         MapUiState state;
         if (cameraState == null){
@@ -83,9 +83,7 @@ public class MapViewModel extends ViewModel {
         }else{
             state = tpToCameraState(cameraState);
         }
-        uiState.postValue(state);
-
-
+        uiState.setValue(state);
     }
     public MapStyle getMapStyle(){
         return mapRepository.getMapStyle();
@@ -111,5 +109,9 @@ public class MapViewModel extends ViewModel {
     private static MapUiState tpToCameraState(CameraState cameraState){
         CameraOptions cameraOptions = MapUtils.cameraOptionsFromState(cameraState);
         return MapUiState.builder().cameraOptions(cameraOptions).build();
+    }
+
+    public MutableLiveData<MapUiState> getUIState() {
+        return uiState;
     }
 }

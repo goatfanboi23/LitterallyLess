@@ -7,6 +7,23 @@
         android:fitsSystemWindows="true"
         android:layout_centerHorizontal="true"
         android:orientation="vertical">
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+        <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:id="@+id/user_icon"
+                android:contentDescription="Iser Icon">
+        </ImageView>
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/username">
+        </TextView>
+    </LinearLayout>
 
 
     <androidx.fragment.app.FragmentContainerView

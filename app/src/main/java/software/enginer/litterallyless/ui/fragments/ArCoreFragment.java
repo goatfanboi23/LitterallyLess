@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.ArCoreApk.Availability;
 import com.google.ar.core.Camera;
@@ -26,6 +27,7 @@ import com.google.ar.core.TrackingState;
 import software.enginer.litterallyless.opengl.renderers.BackgroundRenderer;
 import software.enginer.litterallyless.opengl.Renderer;
 import software.enginer.litterallyless.opengl.renderers.MyLabelRender;
+import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.DisplayRotationHelper;
 import software.enginer.litterallyless.opengl.renderers.SampleRender;
 
@@ -88,6 +90,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
             "multithreaded", new MultiThreadedYuvConvertor(),
             "parallelism", new ParallelYuvConvertor()
     );
+    private Snackbar initalMappingBar = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -200,22 +203,6 @@ public class ArCoreFragment extends Fragment implements Renderer {
         displayRotationHelper.onSurfaceChanged(width, height);
     }
 
-    private void processImageAsync(Image image, int rotation) {
-        backgroundExecutor.submit(() -> {
-            try {
-
-            } catch (Exception e) {
-                String msg = e.getMessage();
-                if (msg != null) {
-                    Log.e(logName, msg);
-                }
-            } finally {
-                if (image != null) {
-                    image.close();
-                }
-            }
-        });
-    }
     long lastOnDraw = -1;
 
     @Override
@@ -223,7 +210,10 @@ public class ArCoreFragment extends Fragment implements Renderer {
         long now = System.nanoTime();
         if (lastOnDraw != -1){
             double delta = ((now - lastOnDraw)/ 1e6);
-            Log.i(ArCoreFragment.class.getSimpleName(),"(MS) TIME SINCE LAST DRAW: " + delta + ", FPS: " + 1000.0/delta);
+            Log.d(ArCoreFragment.class.getSimpleName(),"(MS) TIME SINCE LAST DRAW: " + delta + ", FPS: " + 1000.0/delta);
+        }else{
+            initalMappingBar = Snackbar.make(surfaceView, "Detecting Surface...", Snackbar.LENGTH_INDEFINITE);
+            initalMappingBar.show();
         }
         lastOnDraw = now;
         if (session == null) {
@@ -281,6 +271,10 @@ public class ArCoreFragment extends Fragment implements Renderer {
         }
 
         if (cameraImage != null) {
+            if (initalMappingBar != null){
+                initalMappingBar.dismiss();
+                initalMappingBar = null;
+            }
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
             Image finalCameraImage = cameraImage;
             viewModel.setFrameInUse();
@@ -289,7 +283,9 @@ public class ArCoreFragment extends Fragment implements Renderer {
             });
         }
         viewModel.waitUntilFrameFree();
-        List<LabeledAnchor> anchors = viewModel.getUiState().getValue().getLabeledAnchorList();
+        ArCoreUIState value = viewModel.getUiState().getValue();
+        if (value == null) return;
+        List<LabeledAnchor> anchors = value.getLabeledAnchorList();
         for (LabeledAnchor labeledAnchor : anchors) {
             labelRenderer.draw(
                     render,

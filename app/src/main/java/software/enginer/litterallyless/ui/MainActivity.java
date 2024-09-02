@@ -7,32 +7,48 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
-import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
 import android.os.StrictMode;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.ArCoreApk;
 import com.mapbox.common.MapboxOptions;
+import com.squareup.picasso.Picasso;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 import software.enginer.litterallyless.BuildConfig;
+import software.enginer.litterallyless.perms.TransitionPermissionRequester;
+import software.enginer.litterallyless.ui.fragments.FirebaseUIFragment;
+import software.enginer.litterallyless.ui.fragments.HomeFragment;
 import software.enginer.litterallyless.ui.fragments.MapFragment;
 import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.databinding.ActivityMainBinding;
 import software.enginer.litterallyless.perms.CameraPermTransition;
 import software.enginer.litterallyless.perms.LocationPermTransition;
 import software.enginer.litterallyless.ui.fragments.ArCoreFragment;
-import software.enginer.litterallyless.ui.fragments.DetectionFragment;
 import software.enginer.litterallyless.ui.fragments.SettingsFragment;
-import software.enginer.litterallyless.util.perms.PermissionRequester;
+import software.enginer.litterallyless.ui.models.FirebaseViewModel;
+import software.enginer.litterallyless.ui.models.MapViewModel;
+import software.enginer.litterallyless.util.ConditionalFunction;
+import software.enginer.litterallyless.util.LoginConditional;
+import software.enginer.litterallyless.util.NavItemSectionListener;
 
 public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding activityMainBinding;
 
-    private PermissionRequester locationPermRequest;
-    private CameraPermTransition camPermRequest;
-    private CameraPermTransition arPermRequest;
+    private TransitionPermissionRequester<?> locationPermRequest;
+    private TransitionPermissionRequester<String> arPermRequest;
+    private FirebaseViewModel firebaseViewModel;
+    private MapViewModel mapViewModel;
+    private final AtomicBoolean userStateHasInitialized = new AtomicBoolean(false);
+    private final NavItemSectionListener navItemSectionListener = new NavItemSectionListener();
+    private ConditionalFunction mapConditional, arConditional, homeConditional, settingsConditional;
+    private BooleanSupplier loggedInSupplier;
 
 
     @Override
@@ -43,10 +59,11 @@ public class MainActivity extends AppCompatActivity {
                 .detectLeakedClosableObjects()
                 .penaltyLog()
                 .build());
+        firebaseViewModel = new ViewModelProvider(this).get(FirebaseViewModel.class);
+        mapViewModel = new ViewModelProvider(this).get(MapViewModel.class);
         // create binding
         activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(activityMainBinding.getRoot());
-
         // initialize mapbox
         MapboxOptions.setAccessToken(BuildConfig.MapboxAccessToken);
 
@@ -56,36 +73,77 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        boolean loggedIn = firebaseViewModel.updateLoginInfo();
+        if (!loggedIn) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new FirebaseUIFragment())
+                    .commitNow();
+        }
+
+        firebaseViewModel.getUIState().observe(this, state -> {
+            if (!userStateHasInitialized.getAndSet(true)) return;
+            activityMainBinding.username.setText(state.getUsername());
+            Picasso.get().load(state.getProfileURI()).into(activityMainBinding.userIcon);
+            activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
+        });
+
 
         // create permission request helpers
         locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
-        camPermRequest = new CameraPermTransition(this, R.id.fragment_container, DetectionFragment.class);
         arPermRequest = new CameraPermTransition(this, R.id.fragment_container, ArCoreFragment.class);
-
+        initializeConditionals();
         // configure user interactions
+        navItemSectionListener.addMapping(R.id.map_menu_item, mapConditional)
+                .addMapping(R.id.home_menu_item, homeConditional)
+                .addMapping(R.id.ar_menu_item, arConditional)
+                .addMapping(R.id.settings_menu_item, settingsConditional);
+        activityMainBinding.navBar.setOnItemSelectedListener(navItemSectionListener);
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
+    }
 
-        activityMainBinding.navBar.setOnItemSelectedListener(menuItem -> {
-            if (menuItem.getItemId() == R.id.settings_menu_item) {
+    private void initializeConditionals() {
+        loggedInSupplier = () -> firebaseViewModel.isUserLogged();
+        homeConditional = new ConditionalFunction() {
+            @Override
+            public void onSuccess() {
+                if (firebaseViewModel.updateLoginInfo()) {
+                    runOnUiThread(() -> {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new HomeFragment())
+                                .commitNow();
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new FirebaseUIFragment())
+                                .commitNow();
+                    });
+                }
+            }
+        };
+        settingsConditional = new LoginConditional(activityMainBinding.navBar, loggedInSupplier) {
+            @Override
+            public void onSuccess() {
                 runOnUiThread(() -> {
                     getSupportFragmentManager().beginTransaction()
                             .setReorderingAllowed(true)
                             .replace(R.id.fragment_container, SettingsFragment.class, null)
                             .commitNow();
                 });
-            } else if (menuItem.getItemId() == R.id.ar_menu_item) {
-                arPermRequest.request();
-            } else if (menuItem.getItemId() == R.id.map_menu_item) {
-                locationPermRequest.request();
-            }else if (menuItem.getItemId() == R.id.home_menu_item){
-                runOnUiThread(() -> {
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new Fragment())
-                            .commitNow();
-                });
             }
-            return true;
-        });
+        };
+        arConditional = new LoginConditional(activityMainBinding.navBar, loggedInSupplier) {
+            @Override
+            public void onSuccess() {
+                arPermRequest.request();
+            }
+        };
+        mapConditional = new LoginConditional(activityMainBinding.navBar, loggedInSupplier) {
+            @Override
+            public void onSuccess() {
+                locationPermRequest.request();
+            }
+        };
     }
 
     private void enableFullscreen() {

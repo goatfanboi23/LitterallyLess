@@ -8,11 +8,13 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Builder
 @Data
+@AllArgsConstructor
 public class MapUiState {
 
     @Nullable
@@ -21,4 +23,10 @@ public class MapUiState {
     private final CameraOptions cameraDestination;
     @Nullable
     private final MapAnimationOptions animationOptions;
+
+    public MapUiState() {
+        cameraOptions = null;
+        cameraDestination = null;
+        animationOptions = null;
+    }
 }
