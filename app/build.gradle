@@ -1,14 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id "idea"
     id 'com.google.gms.google-services'
-}
-idea {
-    module {
-        downloadJavadoc = true
-        downloadSources = true
-    }
 }
 android.buildFeatures.buildConfig true
 android {
@@ -67,7 +60,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+//    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout

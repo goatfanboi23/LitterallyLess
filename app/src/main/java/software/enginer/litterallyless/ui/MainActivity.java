@@ -12,7 +12,6 @@ import androidx.lifecycle.ViewModelProvider;
 import android.os.Bundle;
 import android.os.StrictMode;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.ArCoreApk;
 import com.mapbox.common.MapboxOptions;
 import com.squareup.picasso.Picasso;
@@ -22,9 +21,12 @@ import java.util.function.BooleanSupplier;
 
 import jp.wasabeef.picasso.transformations.RoundedCornersTransformation;
 import software.enginer.litterallyless.BuildConfig;
+import software.enginer.litterallyless.LitterallyLess;
+import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.perms.TransitionPermissionRequester;
+import software.enginer.litterallyless.ui.models.factories.ArCoreModelFactory;
 import software.enginer.litterallyless.ui.fragments.FirebaseUIFragment;
-import software.enginer.litterallyless.ui.fragments.HomeFragment;
+import software.enginer.litterallyless.ui.fragments.LeaderboardFragment;
 import software.enginer.litterallyless.ui.fragments.MapFragment;
 import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.databinding.ActivityMainBinding;
@@ -34,6 +36,7 @@ import software.enginer.litterallyless.ui.fragments.ArCoreFragment;
 import software.enginer.litterallyless.ui.fragments.SettingsFragment;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
 import software.enginer.litterallyless.ui.models.MapViewModel;
+import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 import software.enginer.litterallyless.util.ConditionalFunction;
 import software.enginer.litterallyless.util.LoginConditional;
 import software.enginer.litterallyless.util.NavItemSectionListener;
@@ -60,7 +63,11 @@ public class MainActivity extends AppCompatActivity {
                 .detectLeakedClosableObjects()
                 .penaltyLog()
                 .build());
-        firebaseViewModel = new ViewModelProvider(this).get(FirebaseViewModel.class);
+
+        LitterallyLess app = (LitterallyLess)getApplication();
+        FirebaseUserRepository repo = app.getFirebaseUserRepository();
+        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+
         mapViewModel = new ViewModelProvider(this).get(MapViewModel.class);
         // create binding
         activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -110,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 if (firebaseViewModel.updateLoginInfo()) {
                     runOnUiThread(() -> {
                         getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_container, new HomeFragment())
+                                .replace(R.id.fragment_container, new LeaderboardFragment())
                                 .commitNow();
                     });
                 } else {

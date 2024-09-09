@@ -21,9 +21,13 @@ import androidx.preference.PreferenceFragmentCompat;
 
 import com.google.android.material.button.MaterialButton;
 
+import software.enginer.litterallyless.LitterallyLess;
 import software.enginer.litterallyless.R;
+import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.ui.models.ArCoreViewModel;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
+import software.enginer.litterallyless.ui.models.factories.ArCoreModelFactory;
+import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 
 
 public class SettingsFragment extends PreferenceFragmentCompat {
@@ -39,6 +43,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         LinearLayout v = (LinearLayout) super.onCreateView(inflater, container, savedInstanceState);
+
+        LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
+        FirebaseUserRepository repo = app.getFirebaseUserRepository();
+        viewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+
         viewModel = new ViewModelProvider(requireActivity()).get(FirebaseViewModel.class);
         v.setGravity(Gravity.CENTER);
         MaterialButton btn = new MaterialButton(requireContext());

@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import software.enginer.litterallyless.data.DetectionReading;
+import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.util.filters.CostProximityResult;
 import software.enginer.litterallyless.data.Trackable;
 import software.enginer.litterallyless.opengl.TextTextureCache;
@@ -46,14 +47,16 @@ public class ArCoreViewModel extends AndroidViewModel {
     private static final DecimalFormat df = new DecimalFormat("0.00");
     private final MutableLiveData<ArCoreUIState> uiState = new MutableLiveData<>(new ArCoreUIState());
     private final ARDetectorRepository detectorRepository;
+    private final FirebaseUserRepository userRepository;
     private Frame frame;
     private boolean usingFrame = false;
     private final ReentrantLock frameLock = new ReentrantLock();
     private final Condition condition = frameLock.newCondition();
 
-    public ArCoreViewModel(@NonNull Application application) {
+    public ArCoreViewModel(@NonNull Application application, FirebaseUserRepository userRepository) {
         super(application);
-        detectorRepository = new ARDetectorRepository(application.getApplicationContext(), this::onResult);
+        this.detectorRepository = new ARDetectorRepository(application.getApplicationContext(), this::onResult);
+        this.userRepository = userRepository;
     }
 
     private Anchor createAnchor(float imageX, float imageY, Frame frame) {
@@ -277,14 +280,11 @@ public class ArCoreViewModel extends AndroidViewModel {
         detectorRepository.getAnchorManager().degradeAnchors();
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.getDetectionFpsMonitor().add(fps);
-        ArCoreUIState value = uiState.getValue();
-        if (value != null){
-            String label = value.getInferenceLabel();
-            if (label != null && !label.isEmpty()) {
-                collected += Integer.parseInt(value.getInferenceLabel().split(": ")[1]);
-            }
+        int detections = userRepository.incrementDetections(collected);
+        if (collected > 0){
+            userRepository.saveUserDetections();
         }
-        String inferenceLabel = "Trash Collected: " + collected;
+        String inferenceLabel = "Trash Collected: " + detections;
         ArCoreUIState arCoreUIState = new ArCoreUIState(labeledAnchorList, inferenceLabel);
         uiState.postValue(arCoreUIState);
         long end = System.nanoTime();

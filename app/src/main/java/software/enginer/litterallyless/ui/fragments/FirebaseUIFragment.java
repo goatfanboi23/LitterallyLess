@@ -18,8 +18,11 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 
 import java.util.List;
 
+import software.enginer.litterallyless.LitterallyLess;
+import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.databinding.FragmentFirebaseBinding;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
+import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 
 // adapted from https://github.com/firebase/snippets-android/blob/9d886f75b6c5eea5f3366a515e74e8f394118f64/auth/app/src/main/java/com/google/firebase/quickstart/auth/FirebaseUIActivity.java#L49-L62
 public class FirebaseUIFragment extends Fragment {
@@ -40,7 +43,11 @@ public class FirebaseUIFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(requireActivity()).get(FirebaseViewModel.class);
+
+        LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
+        FirebaseUserRepository repo = app.getFirebaseUserRepository();
+        viewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+
         binding.signInButton.setOnClickListener(v -> createSignInIntent());
     }
 

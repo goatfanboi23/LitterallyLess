@@ -24,9 +24,14 @@ import com.google.ar.core.Frame;
 import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 
+import software.enginer.litterallyless.LitterallyLess;
+import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.opengl.renderers.BackgroundRenderer;
 import software.enginer.litterallyless.opengl.Renderer;
 import software.enginer.litterallyless.opengl.renderers.MyLabelRender;
+import software.enginer.litterallyless.ui.models.FirebaseViewModel;
+import software.enginer.litterallyless.ui.models.factories.ArCoreModelFactory;
+import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.DisplayRotationHelper;
 import software.enginer.litterallyless.opengl.renderers.SampleRender;
@@ -40,7 +45,6 @@ import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -80,7 +84,8 @@ public class ArCoreFragment extends Fragment implements Renderer {
     private final float[] viewProjectionMatrix = new float[16];
 
     private FragmentArCoreBinding binding;
-    private ArCoreViewModel viewModel;
+    private ArCoreViewModel coreViewModel;
+    private FirebaseViewModel firebaseViewModel;
     private ExecutorService backgroundExecutor;
     private SampleRender renderer;
     private YuvConverter converter;
@@ -102,13 +107,18 @@ public class ArCoreFragment extends Fragment implements Renderer {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(ArCoreViewModel.class);
+
+        LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
+        FirebaseUserRepository repo = app.getFirebaseUserRepository();
+        coreViewModel = new ViewModelProvider(this, new ArCoreModelFactory(app, repo)).get(ArCoreViewModel.class);
+        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+
         backgroundExecutor = Executors.newSingleThreadExecutor();
         surfaceView = binding.surfaceview;
         displayRotationHelper = new DisplayRotationHelper(requireContext());
         renderer = new SampleRender(surfaceView, this, requireActivity().getAssets());
         installRequested = false;
-        viewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
+        coreViewModel.getUiState().observe(getViewLifecycleOwner(), detectionUIState -> {
             binding.inferenceTextView.setText(detectionUIState.getInferenceLabel());
         });
         String selected = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString("convertor","jni");
@@ -117,6 +127,8 @@ public class ArCoreFragment extends Fragment implements Renderer {
             converter = new RenderscriptYuv2Rgb(requireContext());
         }
     }
+
+
 
     @Override
     public void onDestroyView() {
@@ -228,7 +240,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
         Frame frame;
         try {
             frame = session.update();
-            viewModel.setFrame(frame);
+            coreViewModel.setFrame(frame);
         } catch (CameraNotAvailableException e) {
             Log.e(logName, "Camera not available during onDrawFrame", e);
             return;
@@ -277,13 +289,13 @@ public class ArCoreFragment extends Fragment implements Renderer {
             }
             int rot = displayRotationHelper.getCameraSensorToDisplayRotation(session.getCameraConfig().getCameraId());
             Image finalCameraImage = cameraImage;
-            viewModel.setFrameInUse();
+            coreViewModel.setFrameInUse();
             backgroundExecutor.execute(()-> {
-                viewModel.detectLivestreamFrame(finalCameraImage, rot, converter);
+                coreViewModel.detectLivestreamFrame(finalCameraImage, rot, converter);
             });
         }
-        viewModel.waitUntilFrameFree();
-        ArCoreUIState value = viewModel.getUiState().getValue();
+        coreViewModel.waitUntilFrameFree();
+        ArCoreUIState value = coreViewModel.getUiState().getValue();
         if (value == null) return;
         List<LabeledAnchor> anchors = value.getLabeledAnchorList();
         for (LabeledAnchor labeledAnchor : anchors) {

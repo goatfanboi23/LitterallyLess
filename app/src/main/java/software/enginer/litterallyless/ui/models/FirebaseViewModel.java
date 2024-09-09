@@ -12,13 +12,21 @@ import androidx.lifecycle.ViewModel;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
+import com.firebase.ui.auth.data.model.User;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
+import software.enginer.litterallyless.data.repos.pojos.UserDocument;
 import software.enginer.litterallyless.ui.state.FirebaseState;
 
 public class FirebaseViewModel extends ViewModel {
@@ -26,10 +34,9 @@ public class FirebaseViewModel extends ViewModel {
     private final MutableLiveData<FirebaseState> uiState = new MutableLiveData<>(new FirebaseState());
 
 
-    public FirebaseViewModel() {
-        this.repository = new FirebaseUserRepository();
+    public FirebaseViewModel(FirebaseUserRepository repository) {
+        this.repository = repository;
     }
-
 
     public void provideAuthenticationResult(FirebaseAuthUIAuthenticationResult result) {
         IdpResponse response = result.getIdpResponse();
@@ -37,7 +44,7 @@ public class FirebaseViewModel extends ViewModel {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             repository.setUser(user);
             if (user != null){
-                FirebaseState state = stateFromUser(user);
+                FirebaseState state = stateFromUser(user, repository.getUserDetections());
                 uiState.postValue(state);
             }
         } else {
@@ -57,12 +64,22 @@ public class FirebaseViewModel extends ViewModel {
     public boolean isUserLogged(){
         return repository.getUser() != null;
     }
+
+    public void queryLeaderboard(Consumer<List<UserDocument>> callback){
+        repository.queryUsersByDetections(userDocuments -> {
+            for (UserDocument doc: userDocuments){
+                Log.i(FirebaseViewModel.class.getSimpleName(),"USER ID: " + doc.getUserId());
+            }
+            callback.accept(userDocuments);
+        });
+    }
+
     public boolean updateLoginInfo() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         repository.setUser(user);
         if (user != null){
             FirebaseState curState = uiState.getValue();
-            FirebaseState state = stateFromUser(user);
+            FirebaseState state = stateFromUser(user, repository.getUserDetections());
             if (curState != null && !curState.equals(state)){
                 uiState.postValue(state);
             }
@@ -71,17 +88,17 @@ public class FirebaseViewModel extends ViewModel {
         return false;
     }
     @NotNull
-    public FirebaseState stateFromUser(@Nullable FirebaseUser user){
+    public FirebaseState stateFromUser(@Nullable FirebaseUser user, int detections){
         if (user == null) return new FirebaseState();
         Uri photoUrl = user.getPhotoUrl();
-        return new FirebaseState(user.getDisplayName(), photoUrl, true);
+        return new FirebaseState(user.getDisplayName(), photoUrl, true, detections);
     }
 
     public void signOut(Context context) {
         AuthUI.getInstance()
                 .signOut(context)
                 .addOnCompleteListener(task -> {
-                    FirebaseState state = stateFromUser(null);
+                    FirebaseState state = stateFromUser(null,0);
                     uiState.postValue(state);
                 });
         repository.setUser(null);
