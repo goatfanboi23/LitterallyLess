@@ -4,6 +4,7 @@ import android.net.Uri;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @AllArgsConstructor
 @Data

@@ -1,12 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="20dp"
-        android:gravity="center_vertical">
-
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
     <TextView
-            android:id="@+id/leaderboard_item_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="match_parent"
+            android:text="#"
+            android:minWidth="50dp"
+            android:textSize="32sp"
+            android:paddingRight="10dp"
+            android:textAlignment="center"
+            android:gravity="center"
+            android:id="@+id/leaderboard_placement">
+    </TextView>
+<!--    <ImageView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:id="@+id/user_entry_icon"-->
+<!--            android:paddingEnd="5dp"-->
+<!--            android:paddingStart="5dp"-->
+<!--            android:minWidth="50dp"-->
+<!--            android:minHeight="50dp"-->
+<!--            android:contentDescription="Leaderboard User Icon">-->
+<!--    </ImageView>-->
+    <TextView
+            android:id="@+id/leaderboard_username"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            android:gravity="center">
+    </TextView>
 
-</FrameLayout>
+</LinearLayout>

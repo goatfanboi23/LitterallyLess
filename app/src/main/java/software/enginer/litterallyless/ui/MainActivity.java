@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 .penaltyLog()
                 .build());
 
-        LitterallyLess app = (LitterallyLess)getApplication();
+        LitterallyLess app = (LitterallyLess) getApplication();
         FirebaseUserRepository repo = app.getFirebaseUserRepository();
         firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
 
@@ -81,15 +81,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        boolean loggedIn = firebaseViewModel.updateLoginInfo();
-        if (!loggedIn) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new FirebaseUIFragment())
-                    .commitNow();
-        }
-
         firebaseViewModel.getUIState().observe(this, state -> {
-            if (!userStateHasInitialized.getAndSet(true)) return;
             activityMainBinding.username.setText(state.getUsername());
             Picasso.get().load(state.getProfileURI()).transform(new RoundedCornersTransformation(20,0)).into(activityMainBinding.userIcon);
             activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);

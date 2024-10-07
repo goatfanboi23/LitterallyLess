@@ -18,4 +18,7 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="sign_in_with_google">Sign In With Google</string>
+    <string name="user_name_title">Username</string>
+    <string name="profile_header">User Profile</string>
+    <string name="username_key">username_key</string>
 </resources>

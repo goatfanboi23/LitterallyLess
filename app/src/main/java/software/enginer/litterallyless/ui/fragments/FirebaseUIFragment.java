@@ -10,6 +10,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.firebase.ui.auth.AuthUI;
@@ -19,10 +20,12 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import java.util.List;
 
 import software.enginer.litterallyless.LitterallyLess;
+import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
 import software.enginer.litterallyless.databinding.FragmentFirebaseBinding;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
 import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
+import software.enginer.litterallyless.ui.state.FirebaseState;
 
 // adapted from https://github.com/firebase/snippets-android/blob/9d886f75b6c5eea5f3366a515e74e8f394118f64/auth/app/src/main/java/com/google/firebase/quickstart/auth/FirebaseUIActivity.java#L49-L62
 public class FirebaseUIFragment extends Fragment {
@@ -46,10 +49,23 @@ public class FirebaseUIFragment extends Fragment {
 
         LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
         FirebaseUserRepository repo = app.getFirebaseUserRepository();
-        viewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
-
+        viewModel = new ViewModelProvider(requireActivity(), new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+        viewModel.getUIState().observe(getViewLifecycleOwner(), new Observer<FirebaseState>() {
+            @Override
+            public void onChanged(FirebaseState firebaseState) {
+                if (firebaseState.isSignedIn()){
+                    requireActivity().runOnUiThread(() -> {
+                        requireActivity().getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new LeaderboardFragment())
+                                .commitNow();
+                    });
+                }
+            }
+        });
         binding.signInButton.setOnClickListener(v -> createSignInIntent());
+
     }
+
 
     public void createSignInIntent() {
         if (viewModel.updateLoginInfo()) return;

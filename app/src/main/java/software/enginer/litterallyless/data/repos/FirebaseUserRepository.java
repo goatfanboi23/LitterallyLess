@@ -1,14 +1,15 @@
 package software.enginer.litterallyless.data.repos;
 
-import androidx.annotation.NonNull;
+import android.util.Log;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -27,20 +28,44 @@ public class FirebaseUserRepository {
     private final AtomicReference<FirebaseUser> user = new AtomicReference<>(null);
     private final AtomicInteger detections = new AtomicInteger();
     private final FireStoreDataSource dataSource = new FireStoreDataSource();
-    private final ReadWriteLock userCacheLock = new ReentrantReadWriteLock();
-    private TimeExpirable<List<UserDocument>> expirableUserList = null;
     private final ReentrantLock savingTaskStatusLock = new ReentrantLock();
     private Task<Void> savingTask = null;
-
     public void setUser(FirebaseUser user) {
-        this.user.set(user);
-        if (user == null){
-            // reset user variables
-            detections.set(0);
-        }else {
-            //fetch data for new user
-            lookupUserDetections(detections::set);
+        if (user == null || this.user.get() == null || !user.equals(this.user.get())){
+            this.user.set(user);
+            if (user == null){
+                // reset user variables
+                detections.set(0);
+            }else {
+                //initalize user
+                initUser(user);
+
+            }
         }
+    }
+
+    private void initUser(FirebaseUser user) {
+        //create user in database if not exist
+        dataSource.addUserIfNotExist(user,0);
+        //fetch data for new user
+        lookupUserDetections(detections::set);
+    }
+
+    public void setUsername(@NotNull String username, @Nullable Runnable callback){
+        FirebaseUser firebaseUser = user.get();
+        if (firebaseUser != null){
+            dataSource.setUsername(firebaseUser, username).addOnCompleteListener(task -> {
+                if (callback != null){
+                    callback.run();
+                }
+            });
+        }else if (callback != null){
+            callback.run();
+        }
+    }
+
+    public Task<DocumentSnapshot> queryUserById(String id){
+        return dataSource.queryUserById(id);
     }
 
     @Nullable
@@ -72,39 +97,18 @@ public class FirebaseUserRepository {
         savingTaskStatusLock.lock();
         savingTask = dataSource.setUserDetections(getUser(), detections.get());
         savingTaskStatusLock.unlock();
-        userCacheLock.writeLock().lock();
-        expirableUserList = null;
-        userCacheLock.writeLock().unlock();
     }
 
     public void queryUsersByDetections(Consumer<List<UserDocument>> queryCallback) {
-        userCacheLock.readLock().lock();
-        if (expirableUserList != null && !expirableUserList.isExpired()){
-            List<UserDocument> value = expirableUserList.getValue();
-            userCacheLock.readLock().unlock();
-            if (value == null){
-                queryNetworkForSortedDetections(queryCallback);
-            }else{
-                queryCallback.accept(value);
-            }
-        }else{
-            userCacheLock.readLock().unlock();
-            queryNetworkForSortedDetections(queryCallback);
-        }
+        queryNetworkForSortedDetections(queryCallback);
     }
 
     private void queryNetworkForSortedDetections(Consumer<List<UserDocument>> queryCallback){
         dataSource.queryUsersByDetections().addOnSuccessListener(queryDocumentSnapshots -> {
             List<UserDocument> detects = queryDocumentSnapshots.getDocuments()
                     .stream()
-                    .map(d -> new UserDocument(
-                            d.getId(),
-                            d.get("detections", Integer.class)
-                    ))
+                    .map(UserDocument.documentMapper)
                     .collect(Collectors.toList());
-            userCacheLock.writeLock().lock();
-            expirableUserList = new TimeExpirable<>(detects, Duration.ofMinutes(1));
-            userCacheLock.writeLock().unlock();
             queryCallback.accept(detects);
         });
     }

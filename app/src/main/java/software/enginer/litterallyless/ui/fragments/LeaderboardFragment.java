@@ -27,6 +27,7 @@ import software.enginer.litterallyless.ui.LeaderboardAdapter;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
 import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 import software.enginer.litterallyless.ui.state.FirebaseState;
+import software.enginer.litterallyless.ui.state.LeaderboardState;
 
 public class LeaderboardFragment extends Fragment {
     private FragmentLeaderboardBinding binding;
@@ -46,19 +47,18 @@ public class LeaderboardFragment extends Fragment {
 
         LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
         FirebaseUserRepository repo = app.getFirebaseUserRepository();
-        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+        firebaseViewModel = new ViewModelProvider(requireActivity(), new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
 
         leaderboardAdapter = new LeaderboardAdapter(new ArrayList<>());
         binding.leaderboardView.setAdapter(leaderboardAdapter);
         binding.leaderboardView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        firebaseViewModel.getUIState().observe(getViewLifecycleOwner(), new Observer<FirebaseState>() {
-            @Override
-            public void onChanged(FirebaseState state) {
-                firebaseViewModel.queryLeaderboard(userDocuments -> {
-                    List<String> items = userDocuments.stream().map(d -> d.getUserId() + ":" + d.getDetections()).collect(Collectors.toList());
-                    leaderboardAdapter.setLocalDataSet(items);
-                });
-            }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        firebaseViewModel.queryLeaderboard(docs -> {
+            leaderboardAdapter.setLocalDataSet(docs);
         });
     }
 }

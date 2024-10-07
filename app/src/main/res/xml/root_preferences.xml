@@ -11,6 +11,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/profile_header">
+        <EditTextPreference
+                app:key="@string/username_key"
+                app:title="@string/user_name_title"
+                app:defaultValue="">
+        </EditTextPreference>
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/experimental_header">
 
 <!--        <SwitchPreferenceCompat-->
