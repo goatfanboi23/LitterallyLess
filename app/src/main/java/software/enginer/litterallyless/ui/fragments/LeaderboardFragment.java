@@ -52,13 +52,14 @@ public class LeaderboardFragment extends Fragment {
         leaderboardAdapter = new LeaderboardAdapter(new ArrayList<>());
         binding.leaderboardView.setAdapter(leaderboardAdapter);
         binding.leaderboardView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        firebaseViewModel.getLeaderboardState().observe(getViewLifecycleOwner(), leaderboardState -> {
+            leaderboardAdapter.setLocalDataSet(leaderboardState.getDocuments());
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        firebaseViewModel.queryLeaderboard(docs -> {
-            leaderboardAdapter.setLocalDataSet(docs);
-        });
     }
 }

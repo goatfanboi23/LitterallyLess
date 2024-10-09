@@ -30,7 +30,11 @@ public class FirebaseUserRepository {
     private final FireStoreDataSource dataSource = new FireStoreDataSource();
     private final ReentrantLock savingTaskStatusLock = new ReentrantLock();
     private Task<Void> savingTask = null;
-    public void setUser(FirebaseUser user) {
+
+    public void setUser(FirebaseUser user){
+        setUser(user, null);
+    }
+    public void setUser(FirebaseUser user, @Nullable Runnable onUserAdd) {
         if (user == null || this.user.get() == null || !user.equals(this.user.get())){
             this.user.set(user);
             if (user == null){
@@ -38,17 +42,21 @@ public class FirebaseUserRepository {
                 detections.set(0);
             }else {
                 //initalize user
-                initUser(user);
-
+                initUser(user, onUserAdd);
             }
         }
     }
 
-    private void initUser(FirebaseUser user) {
+    private void initUser(FirebaseUser user, @Nullable Runnable callback) {
         //create user in database if not exist
-        dataSource.addUserIfNotExist(user,0);
-        //fetch data for new user
-        lookupUserDetections(detections::set);
+        dataSource.addUserIfNotExist(user,0, ()-> {
+            lookupUserDetections(integer -> {
+                detections.set(integer);
+                if (callback != null){
+                    callback.run();
+                }
+            });
+        });
     }
 
     public void setUsername(@NotNull String username, @Nullable Runnable callback){
@@ -73,7 +81,7 @@ public class FirebaseUserRepository {
         return user.get();
     }
 
-    public void lookupUserDetections(Consumer<Integer> detectionQueryCallback){
+    private void lookupUserDetections(Consumer<Integer> detectionQueryCallback){
         savingTaskStatusLock.lock();
         if (savingTask != null){
             savingTask.addOnCompleteListener(task -> {

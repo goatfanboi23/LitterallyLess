@@ -31,16 +31,18 @@ import software.enginer.litterallyless.ui.state.LeaderboardState;
 public class FirebaseViewModel extends ViewModel {
     private final FirebaseUserRepository repository;
     private final MutableLiveData<FirebaseState> uiState = new MutableLiveData<>(new FirebaseState());
+    private final MutableLiveData<LeaderboardState> leaderboardState = new MutableLiveData<>();
 
     public FirebaseViewModel(FirebaseUserRepository repository) {
         this.repository = repository;
+        queryLeaderboard();
     }
 
     public void provideAuthenticationResult(FirebaseAuthUIAuthenticationResult result) {
         IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            repository.setUser(user);
+            repository.setUser(user, this::queryLeaderboard);
             if (user != null) {
                 FirebaseState state = stateFromUser(user, user.getDisplayName(), repository.getUserDetections());
                 uiState.postValue(state);
@@ -59,12 +61,19 @@ public class FirebaseViewModel extends ViewModel {
         return uiState;
     }
 
+    public MutableLiveData<LeaderboardState> getLeaderboardState() {
+        return leaderboardState;
+    }
+
     public boolean isUserLogged() {
         return repository.getUser() != null;
     }
 
-    public void queryLeaderboard(Consumer<List<UserDocument>> callback) {
-        repository.queryUsersByDetections(callback);
+    private void queryLeaderboard() {
+        repository.queryUsersByDetections(userDocuments -> {
+            LeaderboardState lState = new LeaderboardState(userDocuments);
+            leaderboardState.postValue(lState);
+        });
     }
 
     public boolean updateLoginInfo() {

@@ -49,7 +49,6 @@ public class MainActivity extends AppCompatActivity {
     private TransitionPermissionRequester<String> arPermRequest;
     private FirebaseViewModel firebaseViewModel;
     private MapViewModel mapViewModel;
-    private final AtomicBoolean userStateHasInitialized = new AtomicBoolean(false);
     private final NavItemSectionListener navItemSectionListener = new NavItemSectionListener();
     private ConditionalFunction mapConditional, arConditional, homeConditional, settingsConditional;
     private BooleanSupplier loggedInSupplier;

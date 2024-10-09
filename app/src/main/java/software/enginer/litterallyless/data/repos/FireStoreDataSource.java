@@ -82,7 +82,7 @@ public class FireStoreDataSource {
         return db.collection("users").document(id).get();
     }
 
-    public void addUserIfNotExist(@NotNull FirebaseUser firebaseUser, int detections) {
+    public void addUserIfNotExist(@NotNull FirebaseUser firebaseUser, int detections, @Nullable Runnable runnable) {
         UserDocument data = new UserDocument(firebaseUser.getUid(), firebaseUser.getDisplayName(), detections);
         db.runTransaction((transaction) -> {
             DocumentSnapshot snapshot = transaction.get(db.collection("users").document(firebaseUser.getUid()));
@@ -90,6 +90,10 @@ public class FireStoreDataSource {
                 transaction.set(db.collection("users").document(firebaseUser.getUid()), data.toMap());
             }
             return null;
+        }).addOnCompleteListener(task -> {
+            if (runnable != null){
+                runnable.run();
+            }
         });
     }
 }
