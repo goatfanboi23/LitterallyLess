@@ -16,15 +16,14 @@ import com.google.ar.core.ArCoreApk;
 import com.mapbox.common.MapboxOptions;
 import com.squareup.picasso.Picasso;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 import jp.wasabeef.picasso.transformations.RoundedCornersTransformation;
 import software.enginer.litterallyless.BuildConfig;
 import software.enginer.litterallyless.LitterallyLess;
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
+import software.enginer.litterallyless.data.repos.MapRepository;
 import software.enginer.litterallyless.perms.TransitionPermissionRequester;
-import software.enginer.litterallyless.ui.models.factories.ArCoreModelFactory;
 import software.enginer.litterallyless.ui.fragments.FirebaseUIFragment;
 import software.enginer.litterallyless.ui.fragments.LeaderboardFragment;
 import software.enginer.litterallyless.ui.fragments.MapFragment;
@@ -37,6 +36,7 @@ import software.enginer.litterallyless.ui.fragments.SettingsFragment;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
 import software.enginer.litterallyless.ui.models.MapViewModel;
 import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
+import software.enginer.litterallyless.ui.models.factories.MapModelFactory;
 import software.enginer.litterallyless.util.ConditionalFunction;
 import software.enginer.litterallyless.util.LoginConditional;
 import software.enginer.litterallyless.util.NavItemSectionListener;
@@ -45,12 +45,12 @@ public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding activityMainBinding;
 
-    private TransitionPermissionRequester<?> locationPermRequest;
-    private TransitionPermissionRequester<String> arPermRequest;
+    private TransitionPermissionRequester<?> mapPermRequester;
+    private TransitionPermissionRequester<?> arPermRequest;
     private FirebaseViewModel firebaseViewModel;
     private MapViewModel mapViewModel;
     private final NavItemSectionListener navItemSectionListener = new NavItemSectionListener();
-    private ConditionalFunction mapConditional, arConditional, homeConditional, settingsConditional;
+    private ConditionalFunction mapConditional, homeConditional, settingsConditional;
     private BooleanSupplier loggedInSupplier;
 
 
@@ -64,10 +64,10 @@ public class MainActivity extends AppCompatActivity {
                 .build());
 
         LitterallyLess app = (LitterallyLess) getApplication();
-        FirebaseUserRepository repo = app.getFirebaseUserRepository();
-        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
-
-        mapViewModel = new ViewModelProvider(this).get(MapViewModel.class);
+        FirebaseUserRepository firebaseRepo = app.getFirebaseUserRepository();
+        MapRepository mapRepo = app.getMapRepository();
+        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(firebaseRepo)).get(FirebaseViewModel.class);
+        mapViewModel = new ViewModelProvider(this, new MapModelFactory(mapRepo)).get(MapViewModel.class);
         // create binding
         activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(activityMainBinding.getRoot());
@@ -88,13 +88,13 @@ public class MainActivity extends AppCompatActivity {
 
 
         // create permission request helpers
-        locationPermRequest = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
+        mapPermRequester = new LocationPermTransition(this, R.id.fragment_container, MapFragment.class);
         arPermRequest = new CameraPermTransition(this, R.id.fragment_container, ArCoreFragment.class);
+
         initializeConditionals();
         // configure user interactions
         navItemSectionListener.addMapping(R.id.map_menu_item, mapConditional)
                 .addMapping(R.id.home_menu_item, homeConditional)
-                .addMapping(R.id.ar_menu_item, arConditional)
                 .addMapping(R.id.settings_menu_item, settingsConditional);
         activityMainBinding.navBar.setOnItemSelectedListener(navItemSectionListener);
         activityMainBinding.navBar.setSelectedItemId(R.id.home_menu_item);
@@ -131,16 +131,10 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         };
-        arConditional = new LoginConditional(activityMainBinding.navBar, loggedInSupplier) {
-            @Override
-            public void onSuccess() {
-                arPermRequest.request();
-            }
-        };
         mapConditional = new LoginConditional(activityMainBinding.navBar, loggedInSupplier) {
             @Override
             public void onSuccess() {
-                locationPermRequest.request();
+                mapPermRequester.request();
             }
         };
     }
@@ -156,4 +150,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public TransitionPermissionRequester<?> getArPermRequest() {
+        return arPermRequest;
+    }
 }

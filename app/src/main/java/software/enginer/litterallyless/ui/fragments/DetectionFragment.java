@@ -34,6 +34,7 @@ import software.enginer.litterallyless.databinding.FragmentDetectionBinding;
 import software.enginer.litterallyless.ui.models.DetectionViewModel;
 
 public class DetectionFragment extends Fragment {
+    private static final String TAG = DetectionFragment.class.getSimpleName();
 
     private DetectionViewModel viewModel;
     private FragmentDetectionBinding binding;

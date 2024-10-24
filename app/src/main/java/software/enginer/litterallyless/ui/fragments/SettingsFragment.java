@@ -37,6 +37,7 @@ import software.enginer.litterallyless.ui.state.FirebaseState;
 
 
 public class SettingsFragment extends PreferenceFragmentCompat {
+    private static final String TAG = FirebaseUIFragment.class.getSimpleName();
 
     private FirebaseViewModel viewModel;
     private SharedPreferences sharedPreferences;

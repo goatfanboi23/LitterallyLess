@@ -13,11 +13,13 @@ public class FirebaseState {
     private final Uri profileURI;
     private final boolean signedIn;
     private final int detections;
+    private final String uuid;
 
     public FirebaseState() {
         username = "";
         profileURI = Uri.EMPTY;
         signedIn = false;
         detections = 0;
+        uuid = "";
     }
 }

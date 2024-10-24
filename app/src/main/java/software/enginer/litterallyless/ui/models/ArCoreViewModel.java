@@ -1,7 +1,9 @@
 package software.enginer.litterallyless.ui.models;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.graphics.Paint;
+import android.location.Location;
 import android.media.Image;
 import android.util.Log;
 
@@ -11,6 +13,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Coordinates2d;
 import com.google.ar.core.Frame;
@@ -19,6 +23,7 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.exceptions.FatalException;
 import com.google.mediapipe.tasks.components.containers.Category;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
+import com.mapbox.geojson.Point;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -27,10 +32,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import software.enginer.litterallyless.data.DetectionReading;
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
+import software.enginer.litterallyless.data.repos.MapRepository;
 import software.enginer.litterallyless.util.filters.CostProximityResult;
 import software.enginer.litterallyless.data.Trackable;
 import software.enginer.litterallyless.opengl.TextTextureCache;
@@ -42,9 +49,12 @@ import software.enginer.litterallyless.ui.state.ArCoreUIState;
 import software.enginer.litterallyless.util.Degradable;
 import software.enginer.litterallyless.util.filters.HungarianAlgorithm;
 import software.enginer.litterallyless.util.convertors.YuvConverter;
+import software.enginer.litterallyless.util.utilities.GeometryUtils;
 
 public class ArCoreViewModel extends AndroidViewModel {
+    private static final String TAG = ArCoreViewModel.class.getSimpleName();
     private static final DecimalFormat df = new DecimalFormat("0.00");
+
     private final MutableLiveData<ArCoreUIState> uiState = new MutableLiveData<>(new ArCoreUIState());
     private final ARDetectorRepository detectorRepository;
     private final FirebaseUserRepository userRepository;
@@ -52,11 +62,13 @@ public class ArCoreViewModel extends AndroidViewModel {
     private boolean usingFrame = false;
     private final ReentrantLock frameLock = new ReentrantLock();
     private final Condition condition = frameLock.newCondition();
+    private final MapRepository mapRepository;
 
-    public ArCoreViewModel(@NonNull Application application, FirebaseUserRepository userRepository) {
+    public ArCoreViewModel(@NonNull Application application, FirebaseUserRepository userRepository, MapRepository mapRepository) {
         super(application);
         this.detectorRepository = new ARDetectorRepository(application.getApplicationContext(), this::onResult);
         this.userRepository = userRepository;
+        this.mapRepository = mapRepository;
     }
 
     private Anchor createAnchor(float imageX, float imageY, Frame frame) {
@@ -74,16 +86,16 @@ public class ArCoreViewModel extends AndroidViewModel {
         List<HitResult> hits = frame.hitTest(convOut[0], convOut[1]);
         if (!hits.isEmpty()) {
             HitResult result = hits.get(0);
-            try{
-               return result.getTrackable().createAnchor(result.getHitPose());
-            }catch (FatalException e){
-                Log.w(ArCoreViewModel.class.getSimpleName(),"Failed to create Anchor");
+            try {
+                return result.getTrackable().createAnchor(result.getHitPose());
+            } catch (FatalException e) {
+                Log.w(TAG, "Failed to create Anchor");
             }
         }
         return null;
     }
 
-    private List<DetectionReading> parseReadings(DetectionResult result){
+    private List<DetectionReading> parseReadings(DetectionResult result) {
         List<DetectionReading> readings = new ArrayList<>();
         long start = System.nanoTime();
         try {
@@ -98,7 +110,7 @@ public class ArCoreViewModel extends AndroidViewModel {
                 return new DetectionReading(anchorPose, rect.categories().get(0));
             }).filter(Objects::nonNull).collect(Collectors.toList());
             long end = System.nanoTime();
-            Log.i(ArCoreViewModel.class.getSimpleName(), "ANCHOR CALC TIME:" + ((end - start) / 1e+6));
+            Log.d(TAG, "ANCHOR CALC TIME:" + ((end - start) / 1e+6));
         } finally {
             setFrameFree();
         }
@@ -128,7 +140,8 @@ public class ArCoreViewModel extends AndroidViewModel {
         |___|_______|______|
         */
         long start = System.nanoTime();
-        List<LabeledAnchor> labeledAnchorList = new ArrayList<>();;
+        List<LabeledAnchor> labeledAnchorList = new ArrayList<>();
+        ;
         int trackerCount = detectorRepository.getAnchorManager().getTrackerCount();
         int detectionCount = readings.size();
         int dim = Math.max(trackerCount, detectionCount);
@@ -155,10 +168,11 @@ public class ArCoreViewModel extends AndroidViewModel {
             CostProximityResult proxResults = detectorRepository.getAnchorManager().getMicroMetersToAnchors(detectionReading.getPose());
             int[] rowCosts = proxResults.getCosts();
             int minCost;
-            if (proxResults.getMinCostIndex() != -1){
+            if (proxResults.getMinCostIndex() != -1) {
                 minCost = rowCosts[proxResults.getMinCostIndex()];
-                if (minCost > 0.3 * 1e+6){
-                    Log.d(ArCoreViewModel.class.getSimpleName(),"ROW : " + row + ", MIN COST:" + minCost);
+                final double threshold = 0.3;
+                if (minCost > (int) (threshold * 1e+6)) {
+                    Log.d(TAG, "ROW : " + row + ", MIN COST:" + minCost);
                     dummyRows.add(row);
                     //Add detection to list that will be assigned a new track after the track assignment algorithm finishes assigning other tracks
                     newPendingDetections.add(detectionReading);
@@ -210,10 +224,10 @@ public class ArCoreViewModel extends AndroidViewModel {
         //Apply a filter to create tracks for detections whose cost is too high to be assigned to any track
         HungarianAlgorithm associationAlgo = null;
         try {
-            Log.d(ArCoreViewModel.class.getSimpleName(), "COST MATRIX SIZE: " + costMatrix.length + " : " + costMatrix[0].length);
+            Log.d(TAG, "COST MATRIX SIZE: " + costMatrix.length + " : " + costMatrix[0].length);
             associationAlgo = new HungarianAlgorithm(costMatrix);
         } catch (IllegalAccessException e) {
-            Log.e(ArCoreViewModel.class.getSimpleName(), "Matrix is not square", e);
+            Log.e(TAG, "Matrix is not square", e);
             throw new RuntimeException(e);
         }
         int[][] optimalAssignment = associationAlgo.findOptimalAssignment();
@@ -225,24 +239,24 @@ public class ArCoreViewModel extends AndroidViewModel {
             assert optimalAssignment[row].length == 2;
             int trackColId = optimalAssignment[row][0];
             int detectionRowId = optimalAssignment[row][1];
-            Log.d(ArCoreViewModel.class.getSimpleName(), "Detection Row ID: " + detectionRowId + ", Tracking Col ID: " + trackColId);
+            Log.d(TAG, "Detection Row ID: " + detectionRowId + ", Tracking Col ID: " + trackColId);
             //check if detection or track are "dummy" track/detections
             boolean isDummyCol = dummyCols.contains(trackColId);
             boolean isDummyRow = dummyRows.contains(detectionRowId);
-            Log.d(ArCoreViewModel.class.getSimpleName(),"STATES {\n\t" +
-                    "COL DUMMY: " + isDummyCol +"@ "+trackColId+ "," +
-                    "\n\tROW DUMMY: " + isDummyRow + "@ " +detectionRowId +
+            Log.d(TAG, "STATES {\n\t" +
+                    "COL DUMMY: " + isDummyCol + "@ " + trackColId + "," +
+                    "\n\tROW DUMMY: " + isDummyRow + "@ " + detectionRowId +
                     "\n}");
             //detection was parred with a dummy track
-            if (isDummyCol && !isDummyRow){
+            if (isDummyCol && !isDummyRow) {
                 // create track for detection (dummy was created because the number of detections was greater than the number of tracks)
-                Log.i(ArCoreViewModel.class.getSimpleName(),"CREATING TRACK FOR DETECTION");
+                Log.d(TAG, "CREATING TRACK FOR DETECTION");
                 Degradable<Pose> degradable = new Degradable<>(readings.get(detectionRowId).getPose());
                 detectorRepository.getAnchorManager().addTrackable(degradable);
             } else if (!isDummyCol && !isDummyRow) {
                 List<AnchorProximityResult> rowResults = rowProxMap.get(detectionRowId);
                 if (rowResults == null) {
-                    Log.e(ArCoreViewModel.class.getSimpleName(), "ROW NOT FOUND IN MAP (INTERNAL ERROR)" +
+                    Log.e(TAG, "ROW NOT FOUND IN MAP (INTERNAL ERROR)" +
                             "Detection row id = " + detectionRowId + "," +
                             "Possible Detections Row IDS = " + rowProxMap.keySet());
                     throw new RuntimeException();
@@ -254,17 +268,17 @@ public class ArCoreViewModel extends AndroidViewModel {
                 if (track != null) {
                     boolean wasMoving = track.getCollected().get();
                     boolean moving = detectorRepository.getAnchorManager().moveToPoses(track, detectionPose);
-                    if (!wasMoving && moving){
+                    if (!wasMoving && moving) {
                         collected++;
                     }
                     Paint paint = trackable.getTrack().getCollected().get() ? TextTextureCache.greenTextPaint : TextTextureCache.redTextPaint;
                     //for now we will render here for debugging
                     Category category = detectionReading.getCategory();
-                    String drawableText = category.categoryName() + " " + df.format(category.score());
+                    String drawableText = category.categoryName();
                     LabeledAnchor la = new LabeledAnchor(detectionPose, drawableText, paint);
                     labeledAnchorList.add(la);
                 } else {
-                    Log.w(ArCoreViewModel.class.getSimpleName(), "Trackable Not Found in Proximity Result");
+                    Log.w(TAG, "Trackable Not Found in Proximity Result");
                 }
             }
         }
@@ -273,7 +287,7 @@ public class ArCoreViewModel extends AndroidViewModel {
             Degradable<Pose> degradable = new Degradable<>(reading.getPose());
             detectorRepository.getAnchorManager().addTrackable(degradable);
             Category category = reading.getCategory();
-            String drawableText = category.categoryName() + " " + df.format(category.score());
+            String drawableText = category.categoryName();
             LabeledAnchor la = new LabeledAnchor(reading.getPose(), drawableText, TextTextureCache.purpleTextPaint);
             labeledAnchorList.add(la);
         });
@@ -281,14 +295,14 @@ public class ArCoreViewModel extends AndroidViewModel {
         double fps = 1000.0 / result.getInferenceTime();
         detectorRepository.getDetectionFpsMonitor().add(fps);
         int detections = userRepository.incrementDetections(collected);
-        if (collected > 0){
+        if (collected > 0) {
             userRepository.saveUserDetections();
         }
         String inferenceLabel = "Trash Collected: " + detections;
         ArCoreUIState arCoreUIState = new ArCoreUIState(labeledAnchorList, inferenceLabel);
         uiState.postValue(arCoreUIState);
         long end = System.nanoTime();
-        Log.i(ArCoreViewModel.class.getSimpleName(), "TRACKABLE CALC TIME:" + ((end - start) / 1e+6));
+        Log.d(TAG, "TRACKABLE CALC TIME:" + ((end - start) / 1e+6));
     }
 
     public LiveData<ArCoreUIState> getUiState() {
@@ -338,5 +352,15 @@ public class ArCoreViewModel extends AndroidViewModel {
         } finally {
             frameLock.unlock();
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    public void stillInFeature(Consumer<Boolean> callback) {
+        mapRepository.getFusedLocationClient().getLastLocation().addOnCompleteListener(task -> {
+            Location result = task.getResult();
+            Log.d(TAG, "Current Location (long, lat):" + result.getLongitude() + ", " + result.getLatitude());
+            boolean r = GeometryUtils.pointInPolygon(mapRepository.getCoordinates(), Point.fromLngLat(result.getLongitude(), result.getLatitude()));
+            callback.accept(r);
+        });
     }
 }

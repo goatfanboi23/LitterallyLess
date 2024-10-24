@@ -29,6 +29,8 @@ import software.enginer.litterallyless.ui.state.FirebaseState;
 import software.enginer.litterallyless.ui.state.LeaderboardState;
 
 public class FirebaseViewModel extends ViewModel {
+    private static final String TAG = FirebaseViewModel.class.getSimpleName();
+
     private final FirebaseUserRepository repository;
     private final MutableLiveData<FirebaseState> uiState = new MutableLiveData<>(new FirebaseState());
     private final MutableLiveData<LeaderboardState> leaderboardState = new MutableLiveData<>();
@@ -49,9 +51,9 @@ public class FirebaseViewModel extends ViewModel {
             }
         } else {
             if (response != null) {
-                Log.e(FirebaseViewModel.class.getSimpleName(), "Sign in failed", response.getError());
+                Log.e(TAG, "Sign in failed", response.getError());
             } else {
-                Log.e(FirebaseViewModel.class.getSimpleName(), "Did not receive login response");
+                Log.e(TAG, "Did not receive login response");
             }
         }
 
@@ -69,10 +71,18 @@ public class FirebaseViewModel extends ViewModel {
         return repository.getUser() != null;
     }
 
-    private void queryLeaderboard() {
-        repository.queryUsersByDetections(userDocuments -> {
-            LeaderboardState lState = new LeaderboardState(userDocuments);
-            leaderboardState.postValue(lState);
+    public void queryLeaderboard() {
+        repository.queryUsersByDetections((user, userDocuments) -> {
+            if (user != null){
+                for (int i = 0; i < userDocuments.size(); i++) {
+                    UserDocument doc = userDocuments.get(i);
+                    if (doc.getUserId().equals(user.getUid())){
+                        LeaderboardState lState = new LeaderboardState(userDocuments, i, doc.getUsername());
+                        leaderboardState.postValue(lState);
+                        break;
+                    }
+                }
+            }
         });
     }
 
@@ -104,7 +114,7 @@ public class FirebaseViewModel extends ViewModel {
         Uri photoUrl = user.getPhotoUrl();
         if (photoUrl == null) return new FirebaseState();
         if (username == null) return new FirebaseState();
-        return new FirebaseState(username, photoUrl, true, detections);
+        return new FirebaseState(username, photoUrl, true, detections, user.getUid());
     }
 
     public void signOut(Context context) {
@@ -122,6 +132,7 @@ public class FirebaseViewModel extends ViewModel {
             FirebaseUser user = repository.getUser();
             FirebaseState state = stateFromUser(user, username, repository.getUserDetections());
             uiState.postValue(state);
+            queryLeaderboard();
         });
     }
 }

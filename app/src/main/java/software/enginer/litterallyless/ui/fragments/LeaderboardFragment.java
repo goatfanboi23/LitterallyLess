@@ -5,7 +5,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -14,10 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import software.enginer.litterallyless.LitterallyLess;
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
@@ -27,9 +22,10 @@ import software.enginer.litterallyless.ui.LeaderboardAdapter;
 import software.enginer.litterallyless.ui.models.FirebaseViewModel;
 import software.enginer.litterallyless.ui.models.factories.FirebaseModelFactory;
 import software.enginer.litterallyless.ui.state.FirebaseState;
-import software.enginer.litterallyless.ui.state.LeaderboardState;
 
 public class LeaderboardFragment extends Fragment {
+    private static final String TAG = FirebaseUIFragment.class.getSimpleName();
+
     private FragmentLeaderboardBinding binding;
     private LeaderboardAdapter leaderboardAdapter;
     private FirebaseViewModel firebaseViewModel;
@@ -52,9 +48,18 @@ public class LeaderboardFragment extends Fragment {
         leaderboardAdapter = new LeaderboardAdapter(new ArrayList<>());
         binding.leaderboardView.setAdapter(leaderboardAdapter);
         binding.leaderboardView.setLayoutManager(new LinearLayoutManager(requireContext()));
-
         firebaseViewModel.getLeaderboardState().observe(getViewLifecycleOwner(), leaderboardState -> {
             leaderboardAdapter.setLocalDataSet(leaderboardState.getDocuments());
+            binding.userLeaderboardName.setText(leaderboardState.getCurrentUsername());
+            binding.userLeaderboardRank.setText(String.format("#%s",leaderboardState.getCurrentUserRank()));
+        });
+        binding.refreshLeaderboardButton.setOnClickListener(v -> firebaseViewModel.queryLeaderboard());
+        binding.userLeaderboardName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int currentUserRank = firebaseViewModel.getLeaderboardState().getValue().getCurrentUserRank();
+                binding.leaderboardView.scrollToPosition(currentUserRank);
+            }
         });
     }
 

@@ -30,6 +30,8 @@ import software.enginer.litterallyless.ui.state.LeaderboardState;
 
 // adapted from https://github.com/firebase/snippets-android/blob/9d886f75b6c5eea5f3366a515e74e8f394118f64/auth/app/src/main/java/com/google/firebase/quickstart/auth/FirebaseUIActivity.java#L49-L62
 public class FirebaseUIFragment extends Fragment {
+    private static final String TAG = FirebaseUIFragment.class.getSimpleName();
+
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(), this::onSignInResult
     );

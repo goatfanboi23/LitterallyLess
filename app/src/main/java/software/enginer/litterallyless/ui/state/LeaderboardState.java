@@ -13,8 +13,12 @@ import software.enginer.litterallyless.data.repos.pojos.UserDocument;
 @Data
 public class LeaderboardState {
     private final List<UserDocument> documents;
+    private final int currentUserRank;
+    private final String currentUsername;
 
     public LeaderboardState() {
         this.documents = new ArrayList<>();
+        currentUserRank = -1;
+        currentUsername = "";
     }
 }

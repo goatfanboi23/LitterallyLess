@@ -66,7 +66,7 @@ public class ARDetectorRepository {
         baseBuilder.setModelAssetPath(assetPath).setDelegate(delegate);
         ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder()
                 .setBaseOptions(baseBuilder.build())
-                .setScoreThreshold(0.5f)
+                .setScoreThreshold(0.4f)
                 .setRunningMode(RunningMode.LIVE_STREAM)
                 .setResultListener(this::returnResult)
                 .setMaxResults(4).build();
@@ -89,7 +89,7 @@ public class ARDetectorRepository {
         long deltaDetectionTime = (SystemClock.uptimeMillis() - frameTime);
         getDetectionFpsMonitor().add((double) deltaDetectionTime);
         double avgFPS = getDetectionFpsMonitor().averageDouble(Double::doubleValue);
-        Log.i(ARDetectorRepository.class.getSimpleName(), "CONVERSION TIME: " + avgFPS);
+        Log.d(ARDetectorRepository.class.getSimpleName(), "CONVERSION TIME: " + avgFPS);
         if (rotation != getImageRotation()) {
             updateRotation(rotation);
             bitmap.recycle();

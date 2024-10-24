@@ -1,11 +1,14 @@
 package software.enginer.litterallyless.data.repos;
 
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.CameraState;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -26,8 +29,10 @@ public class MapRepository {
 
     private final ReentrantReadWriteLock styleLock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock locationLock = new ReentrantReadWriteLock();
+    private final List<Point> coordinates = new ArrayList<>();
+    private final FusedLocationProviderClient fusedLocationClient;
 
-    public MapRepository() {
+    public MapRepository(FusedLocationProviderClient fusedLocationClient) {
         this.mapStyle = new MapStyle(styleURL);
         this.userInitialLocation = null;
         this.styleLayerIds = new ArrayList<>();
@@ -38,6 +43,7 @@ public class MapRepository {
                 .pitch(0d)
                 .build();
         transitionSpec = new DefaultTransitionSpec();
+        this.fusedLocationClient = fusedLocationClient;
     }
 
     public void setStyleLayerIds(List<String> styleLayerIds) {
@@ -85,5 +91,18 @@ public class MapRepository {
 
     public TransitionSpec getTransitionSpec() {
         return transitionSpec;
+    }
+
+    public void setCurrentBounds(List<Point> coordinates) {
+        this.coordinates.clear();
+        this.coordinates.addAll(coordinates);
+    }
+
+    public List<Point> getCoordinates() {
+        return coordinates;
+    }
+
+    public FusedLocationProviderClient getFusedLocationClient() {
+        return fusedLocationClient;
     }
 }

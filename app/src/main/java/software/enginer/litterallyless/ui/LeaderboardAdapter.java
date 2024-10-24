@@ -35,7 +35,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         dataSetLock.lock();
         this.localDataSet.clear();
         this.localDataSet.addAll(localDataSet);
-        Log.i(LeaderboardAdapter.class.getSimpleName(),"LEADERBOARD DATASET SIZE: " + localDataSet.size());
+        Log.d(LeaderboardAdapter.class.getSimpleName(),"LEADERBOARD DATASET SIZE: " + localDataSet.size());
         dataSetLock.unlock();
         notifyDataSetChanged();
     }
@@ -63,6 +63,10 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         dataSetLock.lock();
         viewHolder.getUsernameTextView().setText(localDataSet.get(position).getUsername());
         viewHolder.getPlacementTextView().setText(String.format(Locale.getDefault(),"#%d", position));
+        String id = ":" + localDataSet.get(position).getUserId().substring(0,4);
+        viewHolder.getIdPrefixTextView().setText(id);
+        String detections = "Detections: " + localDataSet.get(position).getDetections();
+        viewHolder.getDetectionCountTextView().setText(detections);
         dataSetLock.unlock();
     }
 
@@ -78,11 +82,15 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView placementTextView;
         private final TextView usernameTextView;
+        private final TextView idPrefixTextView;
+        private final TextView detectionCountTextView;
 
         public ViewHolder(View view) {
             super(view);
             placementTextView = view.findViewById(R.id.leaderboard_placement);
             usernameTextView = view.findViewById(R.id.leaderboard_username);
+            idPrefixTextView = view.findViewById(R.id.leaderboard_id_prefix);
+            detectionCountTextView = view.findViewById(R.id.leaderboard_detections);
         }
     }
 }

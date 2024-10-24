@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.ArCoreApk.Availability;
@@ -25,7 +26,9 @@ import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 
 import software.enginer.litterallyless.LitterallyLess;
+import software.enginer.litterallyless.R;
 import software.enginer.litterallyless.data.repos.FirebaseUserRepository;
+import software.enginer.litterallyless.data.repos.MapRepository;
 import software.enginer.litterallyless.opengl.renderers.BackgroundRenderer;
 import software.enginer.litterallyless.opengl.Renderer;
 import software.enginer.litterallyless.opengl.renderers.MyLabelRender;
@@ -49,7 +52,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import software.enginer.litterallyless.databinding.FragmentArCoreBinding;
 import software.enginer.litterallyless.ui.state.LabeledAnchor;
@@ -63,7 +68,7 @@ import software.enginer.litterallyless.util.convertors.YuvConverter;
 
 public class ArCoreFragment extends Fragment implements Renderer {
 
-    private static final String logName = ArCoreFragment.class.getSimpleName();
+    private static final String TAG = ArCoreFragment.class.getSimpleName();
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
@@ -87,6 +92,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
     private ArCoreViewModel coreViewModel;
     private FirebaseViewModel firebaseViewModel;
     private ExecutorService backgroundExecutor;
+    private ScheduledExecutorService locationExecutor;
     private SampleRender renderer;
     private YuvConverter converter;
     private static final Map<String, YuvConverter> convertorMap = Map.of(
@@ -109,11 +115,13 @@ public class ArCoreFragment extends Fragment implements Renderer {
         super.onViewCreated(view, savedInstanceState);
 
         LitterallyLess app = (LitterallyLess)requireActivity().getApplication();
-        FirebaseUserRepository repo = app.getFirebaseUserRepository();
-        coreViewModel = new ViewModelProvider(this, new ArCoreModelFactory(app, repo)).get(ArCoreViewModel.class);
-        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(repo)).get(FirebaseViewModel.class);
+        FirebaseUserRepository firebaseRepo = app.getFirebaseUserRepository();
+        MapRepository mapRepo = app.getMapRepository();
+        coreViewModel = new ViewModelProvider(this, new ArCoreModelFactory(app, firebaseRepo, mapRepo)).get(ArCoreViewModel.class);
+        firebaseViewModel = new ViewModelProvider(this, new FirebaseModelFactory(firebaseRepo)).get(FirebaseViewModel.class);
 
         backgroundExecutor = Executors.newSingleThreadExecutor();
+        locationExecutor = Executors.newSingleThreadScheduledExecutor();
         surfaceView = binding.surfaceview;
         displayRotationHelper = new DisplayRotationHelper(requireContext());
         renderer = new SampleRender(surfaceView, this, requireActivity().getAssets());
@@ -126,6 +134,23 @@ public class ArCoreFragment extends Fragment implements Renderer {
         if (converter == null){
             converter = new RenderscriptYuv2Rgb(requireContext());
         }
+        locationExecutor.scheduleWithFixedDelay(()->{
+            coreViewModel.stillInFeature(r -> {
+                if (!r){
+                    ((BottomNavigationView)requireActivity().findViewById(R.id.nav_bar)).setSelectedItemId(R.id.home_menu_item);
+                    Snackbar.make(requireActivity().findViewById(R.id.nav_bar),
+                            "You left pickup location", Snackbar.LENGTH_SHORT
+                    ).show();
+
+                    Log.e(TAG, "YOU LEFT FEATURE :(");
+                    requireActivity().runOnUiThread(() -> {
+                        requireActivity().getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new LeaderboardFragment())
+                                .commitNow();
+                    });
+                }
+            });
+        },0,5, TimeUnit.SECONDS);
     }
 
 
@@ -134,8 +159,17 @@ public class ArCoreFragment extends Fragment implements Renderer {
     public void onDestroyView() {
         super.onDestroyView();
         backgroundExecutor.shutdown();
+        locationExecutor.shutdown();
         try {
             backgroundExecutor.awaitTermination(
+                    Long.MAX_VALUE,
+                    TimeUnit.NANOSECONDS
+            );
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            locationExecutor.awaitTermination(
                     Long.MAX_VALUE,
                     TimeUnit.NANOSECONDS
             );
@@ -184,7 +218,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
         } catch (UnavailableDeviceNotCompatibleException |
                  UnavailableUserDeclinedInstallationException | UnavailableSdkTooOldException |
                  UnavailableArcoreNotInstalledException | UnavailableApkTooOldException e) {
-            Log.e(ArCoreFragment.class.getSimpleName(), "Exception creating session", e);
+            Log.e(TAG, "Exception creating session", e);
             return null;
         }
     }
@@ -222,7 +256,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
         long now = System.nanoTime();
         if (lastOnDraw != -1){
             double delta = ((now - lastOnDraw)/ 1e6);
-            Log.d(ArCoreFragment.class.getSimpleName(),"(MS) TIME SINCE LAST DRAW: " + delta + ", FPS: " + 1000.0/delta);
+            Log.d(TAG,"(MS) TIME SINCE LAST DRAW: " + delta + ", FPS: " + 1000.0/delta);
         }else{
             initalMappingBar = Snackbar.make(surfaceView, "Detecting Surface...", Snackbar.LENGTH_INDEFINITE);
             initalMappingBar.show();
@@ -242,7 +276,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
             frame = session.update();
             coreViewModel.setFrame(frame);
         } catch (CameraNotAvailableException e) {
-            Log.e(logName, "Camera not available during onDrawFrame", e);
+            Log.e(TAG, "Camera not available during onDrawFrame", e);
             return;
         }
         Camera camera = frame.getCamera();
@@ -250,7 +284,7 @@ public class ArCoreFragment extends Fragment implements Renderer {
             backgroundRenderer.setUseDepthVisualization(render, false);
             backgroundRenderer.setUseOcclusion(render, session.getConfig().getDepthMode() == Config.DepthMode.AUTOMATIC);
         } catch (IOException e) {
-            Log.e(logName, "Failed to read a required asset file", e);
+            Log.e(TAG, "Failed to read a required asset file", e);
             return;
         }
 

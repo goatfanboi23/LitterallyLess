@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -107,17 +108,17 @@ public class FirebaseUserRepository {
         savingTaskStatusLock.unlock();
     }
 
-    public void queryUsersByDetections(Consumer<List<UserDocument>> queryCallback) {
+    public void queryUsersByDetections(BiConsumer<FirebaseUser, List<UserDocument>> queryCallback) {
         queryNetworkForSortedDetections(queryCallback);
     }
 
-    private void queryNetworkForSortedDetections(Consumer<List<UserDocument>> queryCallback){
+    private void queryNetworkForSortedDetections(BiConsumer<FirebaseUser,List<UserDocument>> queryCallback){
         dataSource.queryUsersByDetections().addOnSuccessListener(queryDocumentSnapshots -> {
             List<UserDocument> detects = queryDocumentSnapshots.getDocuments()
                     .stream()
                     .map(UserDocument.documentMapper)
                     .collect(Collectors.toList());
-            queryCallback.accept(detects);
+            queryCallback.accept(getUser(), detects);
         });
     }
 

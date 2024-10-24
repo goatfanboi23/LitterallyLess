@@ -1,38 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="75dp"
         android:layout_margin="10dp"
+        android:minHeight="75dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
+
     <TextView
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="#"
-            android:minWidth="50dp"
+            android:layout_height="50dp"
+            android:text="#1"
             android:textSize="32sp"
-            android:paddingRight="10dp"
-            android:textAlignment="center"
             android:gravity="center"
+            android:paddingEnd="10dp"
             android:id="@+id/leaderboard_placement">
     </TextView>
-<!--    <ImageView-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:id="@+id/user_entry_icon"-->
-<!--            android:paddingEnd="5dp"-->
-<!--            android:paddingStart="5dp"-->
-<!--            android:minWidth="50dp"-->
-<!--            android:minHeight="50dp"-->
-<!--            android:contentDescription="Leaderboard User Icon">-->
-<!--    </ImageView>-->
+
     <TextView
             android:id="@+id/leaderboard_username"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="50dp"
+            android:text="testing"
             android:textAlignment="center"
-            android:textSize="24sp"
-            android:gravity="center">
+            android:gravity="center"
+            android:layout_toEndOf="@id/leaderboard_placement"
+            android:textSize="24sp">
     </TextView>
 
-</LinearLayout>
+    <TextView
+            android:id="@+id/leaderboard_id_prefix"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:text="fasdf"
+            android:textSize="14sp"
+            android:layout_marginTop="1dp"
+            android:gravity="center"
+            android:layout_toEndOf="@id/leaderboard_username">
+
+    </TextView>
+
+    <TextView
+            android:id="@+id/leaderboard_detections"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textAlignment="center"
+            android:text="Detections: "
+            android:layout_below="@id/leaderboard_placement"
+            android:textSize="20sp"
+            android:gravity="center">
+    </TextView>
+</RelativeLayout>

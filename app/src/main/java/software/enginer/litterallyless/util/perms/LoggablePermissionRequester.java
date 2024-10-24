@@ -3,10 +3,13 @@ package software.enginer.litterallyless.util.perms;
 import android.util.Log;
 
 import androidx.activity.result.contract.ActivityResultContract;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Collection;
 import java.util.List;
+
+import software.enginer.litterallyless.ui.MainActivity;
 
 public abstract class LoggablePermissionRequester<T> extends ContractedPermissionRequester<T> {
     private final String[] rationals;
@@ -22,7 +25,7 @@ public abstract class LoggablePermissionRequester<T> extends ContractedPermissio
     public void showRational() {
         List<String> strings = permAsString(getPermHolder());
         for (int i = 0; i < strings.size(); i++) {
-            Log.i(logName, strings.get(i) + " Permission Rational: " + rationals[i]);
+            Log.d(logName, strings.get(i) + " Permission Rational: " + rationals[i]);
         }
     }
 
@@ -30,7 +33,7 @@ public abstract class LoggablePermissionRequester<T> extends ContractedPermissio
     public void onSuccess() {
         List<String> strings = permAsString(getPermHolder());
         for (String s: strings){
-            Log.i(logName, s + " Permission Accepted");
+            Log.d(logName, s + " Permission Accepted");
 
         }
     }
@@ -39,8 +42,7 @@ public abstract class LoggablePermissionRequester<T> extends ContractedPermissio
     public void onFail() {
         List<String> strings = permAsString(getPermHolder());
         for (String s: strings){
-            Log.i(logName, s + " Permission Rejected");
-
+            Log.d(logName, s + " Permission Rejected");
         }
     }
 }
